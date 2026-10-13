@@ -1,0 +1,4 @@
+/docker/**/*.sh text eol=lf
+/docker/php/fpm-healthcheck text eol=lf
+/docker/php/Dockerfile text eol=lf
+/docker/**/*.conf text eol=lf

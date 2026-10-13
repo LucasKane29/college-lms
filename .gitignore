@@ -50,3 +50,11 @@
 
 # Embedded web-server pid file
 /.web-server-pid
+
+/.env
+/app/.env.local
+/app/.env.*.local
+/app/.env.local.php
+/app/vendor/
+/app/var/
+/app/public/uploads/
