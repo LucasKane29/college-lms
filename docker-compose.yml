@@ -1,0 +1,238 @@
+# College LMS | Docker Compose v2 | repository root: /opt/college
+# Required companion files: docker/php/* and docker/nginx/default.conf.
+# Bootstrap: bash docker/init-env.sh && docker compose build --pull
+# Start Messenger after Composer/migrations: docker compose --profile worker up -d worker
+name: ${COMPOSE_PROJECT_NAME:-college-stage}
+
+x-common: &common
+  restart: unless-stopped
+  networks: [college]
+  logging:
+    driver: local
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-php: &php
+  <<: *common
+  image: ${COMPOSE_PROJECT_NAME:-college-stage}-php:8.4
+  build:
+    context: ./docker/php
+    args:
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
+  init: true
+  working_dir: /var/www/html
+  environment:
+    APP_ENV: ${APP_ENV:-prod}
+    APP_DEBUG: ${APP_DEBUG:-0}
+    APP_SECRET: ${APP_SECRET:?Set APP_SECRET in the root .env}
+    DATABASE_URL: "mysql://${MYSQL_USER:-college}:${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-college}?serverVersion=8.4.0&charset=utf8mb4"
+    REDIS_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+    MESSENGER_TRANSPORT_DSN: "amqp://${RABBITMQ_USER:-college}:${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}@rabbitmq:5672/${RABBITMQ_VHOST:-college}/messages"
+    MAILER_DSN: "smtp://mailpit:1025"
+    TZ: ${TZ:-Europe/Kyiv}
+  volumes:
+    - type: bind
+      source: ./app
+      target: /var/www/html
+      bind:
+        create_host_path: false
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  nginx:
+    <<: *common
+    image: nginx:stable-alpine
+    ports:
+      - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+    volumes:
+      - type: bind
+        source: ./app
+        target: /var/www/html
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./docker/nginx/default.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/nginx-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  app:
+    <<: *php
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/fpm-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    <<: *php
+    profiles: [worker]
+    command:
+      - php
+      - bin/console
+      - messenger:consume
+      - async
+      - --time-limit=3600
+      - --memory-limit=256M
+      - --sleep=1
+      - --no-interaction
+    stop_signal: SIGTERM
+    stop_grace_period: 120s
+    depends_on:
+      app:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      # Process liveness only; queue progress needs application monitoring.
+      test: ["CMD-SHELL", "pgrep -f '^php bin/console messenger:consume ' > /dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  mysql:
+    <<: *common
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-college}
+      MYSQL_USER: ${MYSQL_USER:-college}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      TZ: ${TZ:-Europe/Kyiv}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      # Authenticated query over TCP; the temporary initialization server cannot pass.
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP
+          --host=127.0.0.1 --user="$${MYSQL_USER}"
+          --database="$${MYSQL_DATABASE}" --connect-timeout=3
+          --execute='SELECT 1' > /dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+    stop_grace_period: 60s
+
+  redis:
+    <<: *common
+    image: redis:7-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command:
+      - sh
+      - -c
+      - exec docker-entrypoint.sh redis-server --appendonly yes --appendfsync everysec --requirepass "$$REDIS_PASSWORD"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -qx PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    stop_grace_period: 30s
+
+  rabbitmq:
+    <<: *common
+    image: rabbitmq:4-management-alpine
+    # Stable node identity is required to reuse the persisted RabbitMQ database.
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-college}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-college}
+    ports:
+      - "127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_port_connectivity"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+    stop_grace_period: 60s
+
+  mailpit:
+    <<: *common
+    image: axllent/mailpit:v1.31.2
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_MAX_MESSAGES: "5000"
+      TZ: ${TZ:-Europe/Kyiv}
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    volumes:
+      - mailpit_data:/data
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  portainer:
+    <<: *common
+    # Alpine variant includes wget for an HTTPS healthcheck.
+    image: portainer/portainer-ce:alpine-lts
+    ports:
+      - "127.0.0.1:${PORTAINER_HTTPS_PORT:-9443}:9443"
+    volumes:
+      # Docker socket access grants administrative control over this Docker host.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    healthcheck:
+      # Local self-signed certificate; do not disable TLS checks for remote services.
+      test: ["CMD", "wget", "--no-check-certificate", "-q", "-O", "/dev/null", "https://127.0.0.1:9443/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  college:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  rabbitmq_data:
+  mailpit_data:
+  portainer_data:
