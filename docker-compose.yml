@@ -1,5 +1,5 @@
 # College LMS | Docker Compose v2 | repository root: /opt/college
-# Required companion files: docker/php/* and docker/nginx/default.conf.
+# Required companion files: docker/php/*, docker/portainer/* and docker/nginx/default.conf.
 # Bootstrap: bash docker/init-env.sh && docker compose build --pull
 # Start Messenger after Composer/migrations: docker compose --profile worker up -d worker
 name: ${COMPOSE_PROJECT_NAME:-college-stage}
@@ -210,8 +210,10 @@ services:
 
   portainer:
     <<: *common
-    # Alpine variant includes wget for an HTTPS healthcheck.
-    image: portainer/portainer-ce:alpine-lts
+    # Official lts image extended only with a static HTTPS healthcheck binary.
+    image: ${COMPOSE_PROJECT_NAME:-college-stage}-portainer:lts
+    build:
+      context: ./docker/portainer
     ports:
       - "127.0.0.1:${PORTAINER_HTTPS_PORT:-9443}:9443"
     volumes:
@@ -219,8 +221,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     healthcheck:
-      # Local self-signed certificate; do not disable TLS checks for remote services.
-      test: ["CMD", "wget", "--no-check-certificate", "-q", "-O", "/dev/null", "https://127.0.0.1:9443/"]
+      test: ["CMD", "/portainer-healthcheck"]
       interval: 30s
       timeout: 5s
       retries: 3
