@@ -37,7 +37,7 @@
                             <td>
                                 <a href="{{ path('app_admin_user_edit', {id: user.id, catalog: query|merge({page: page, perPage: perPage})}) }}" data-turbo-frame="user-edit-modal" data-edit-user-id="{{ user.id }}">Редагувати<span class="sr-only">: {{ user.email }}</span></a>
                                 <br>
-                                {% if user.roleLocked %}<span>Роль заблоковано: студент у групі</span>{% else %}<a href="{{ path('app_admin_user_role', {id: user.id}) }}" data-turbo-frame="_top">Змінити роль<span class="sr-only">: {{ user.email }}</span></a>{% endif %}
+                                {% if user.roleLocked %}<span>Роль заблоковано: студент у групі</span>{% else %}<a href="{{ path('app_admin_user_role', {id: user.id, catalog: query|merge({page: page, perPage: perPage})}) }}" data-turbo-frame="user-edit-modal" data-role-user-id="{{ user.id }}">Змінити роль<span class="sr-only">: {{ user.email }}</span></a>{% endif %}
                             </td>
                         </tr>
                     {% else %}

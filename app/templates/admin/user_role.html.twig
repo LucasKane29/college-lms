@@ -1,20 +1,26 @@
-{% extends 'layouts/authenticated.html.twig' %}
+{% extends 'admin/layout.html.twig' %}
 {% block title %}Зміна ролі · College LMS{% endblock %}
-{% block workspace_content %}
-    <div class="workspace-card">
-    <a href="{{ path('app_admin_users') }}" class="text-sm text-blue-600">← Користувачі</a>
-    <h1 class="mt-6 text-3xl font-semibold">Зміна ролі</h1>
-    <p class="mt-4 font-medium">{{ user.fullName }}</p>
-    <p class="mb-8 break-all text-sm text-slate-500">{{ user.email }}</p>
-    {% if user.roleLocked %}
-        <p role="alert">Спочатку вилучіть студента з групи, щоб змінити його роль.</p>
-        <p>Група: <a href="{{ path('app_curator_group_show', {id: user.studentGroup.id}) }}">{{ user.studentGroup.name }}</a></p>
-    {% else %}
-    {{ form_start(roleForm) }}
-        {{ form_errors(roleForm) }}
-        {{ form_row(roleForm.role) }}
-        <button type="submit" class="primary-button mt-6">Зберегти роль</button>
-    {{ form_end(roleForm) }}
-    {% endif %}
-    </div>
+{% block admin_content %}
+    <turbo-frame id="user-edit-modal">
+        <dialog open class="user-edit-dialog" data-controller="modal" data-modal-user-id-value="{{ user.id }}" data-modal-action-value="role" data-action="cancel->modal#cancel click->modal#backdrop turbo:before-cache@document->modal#cancel" aria-labelledby="user-role-title">
+            <div class="user-edit-heading">
+                <h1 id="user-role-title">Зміна ролі</h1>
+                <button type="button" class="user-edit-close" data-action="modal#cancel" aria-label="Закрити">×</button>
+            </div>
+            <p class="admin-description">{{ user.fullName }} · {{ user.email }}</p>
+            {% if user.roleLocked %}
+                <p role="alert">Спочатку вилучіть студента з групи, щоб змінити його роль.</p>
+                <p>Група: <a href="{{ path('app_curator_group_show', {id: user.studentGroup.id}) }}" data-turbo-frame="_top">{{ user.studentGroup.name }}</a></p>
+            {% else %}
+                {{ form_start(roleForm) }}
+                    {% if roleForm.vars.errors|length %}<div role="alert">{{ form_errors(roleForm) }}</div>{% endif %}
+                    <div class="admin-field">{{ form_row(roleForm.role) }}</div>
+                    <div class="user-edit-actions">
+                        <button type="submit" class="admin-button" data-turbo-submits-with="Зберігаємо…">Зберегти роль</button>
+                        <a href="{{ path('app_admin_users', catalog) }}" data-action="modal#cancel" data-turbo-frame="_top">Скасувати</a>
+                    </div>
+                {{ form_end(roleForm) }}
+            {% endif %}
+        </dialog>
+    </turbo-frame>
 {% endblock %}

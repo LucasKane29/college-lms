@@ -195,6 +195,70 @@ class AdminUserEditTest extends WebTestCase
         self::assertStringNotContainsString('data-user-id="'.$id.'"', $this->client->getResponse()->getContent());
     }
 
+    public function testRoleActionOpensModalAndUpdatesCatalogAfterSave(): void
+    {
+        $this->client->loginUser($this->admin);
+        $id = $this->target->getId();
+        $crawler = $this->client->request('GET', '/admin/users', ['email' => 'target@', 'perPage' => 10]);
+        $link = $crawler->filter('[data-role-user-id="'.$id.'"][data-turbo-frame="user-edit-modal"]')->link();
+        $this->client->click($link);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('turbo-frame#user-edit-modal dialog[data-modal-action-value="role"]');
+        $this->client->submitForm('Зберегти роль', ['user_role[role]' => 'ROLE_TEACHER'], serverParameters: ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('content-type', 'text/vnd.turbo-stream.html; charset=UTF-8');
+        self::assertSelectorExists('turbo-stream[action="replace"][target="user-catalog"]');
+        self::assertSelectorExists('turbo-stream[action="update"][target="user-edit-modal"]');
+        self::assertStringContainsString('Викладач', $this->client->getResponse()->getContent());
+        self::assertStringContainsString('Записи 1–1 з 1', $this->client->getResponse()->getContent());
+        $this->manager()->clear();
+        self::assertSame(UserRole::Teacher, $this->manager()->find(User::class, $id)->getRole());
+    }
+
+    public function testRoleModalKeepsFiltersAndPage(): void
+    {
+        for ($index = 0; $index < 23; ++$index) $this->user('student'.$index.'@example.com', UserRole::Student);
+        $this->client->loginUser($this->admin);
+        $id = $this->target->getId();
+        $this->client->request('GET', '/admin/users/'.$id.'/role', ['catalog' => ['role' => 'ROLE_STUDENT', 'perPage' => 10, 'page' => 2]]);
+        $this->client->submitForm('Зберегти роль', ['user_role[role]' => 'ROLE_TEACHER'], serverParameters: ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Записи 11–20 з 23', $this->client->getResponse()->getContent());
+        self::assertStringNotContainsString('data-user-id="'.$id.'"', $this->client->getResponse()->getContent());
+    }
+
+    public function testInvalidRoleKeepsModalOpen(): void
+    {
+        $this->client->loginUser($this->admin);
+        $id = $this->target->getId();
+        $url = '/admin/users/'.$id.'/role';
+        $crawler = $this->client->request('GET', $url);
+        $token = $crawler->filter('input[name="user_role[_token]"]')->attr('value');
+        $this->client->request('POST', $url, ['user_role' => ['role' => 'ROLE_UNKNOWN', '_token' => $token]], server: ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorExists('turbo-frame#user-edit-modal dialog form');
+        self::assertSelectorNotExists('turbo-stream');
+        $this->manager()->clear();
+        self::assertSame(UserRole::Student, $this->manager()->find(User::class, $id)->getRole());
+    }
+
+    public function testGroupedStudentRoleRemainsLockedInModal(): void
+    {
+        $group = (new Group())->setName('КН-21')->setCurator($this->admin);
+        $group->addStudent($this->target);
+        $this->manager()->persist($group);
+        $this->manager()->flush();
+        $id = $this->target->getId();
+        $this->client->loginUser($this->admin);
+        $this->client->request('POST', '/admin/users/'.$id.'/role', ['user_role' => ['role' => 'ROLE_TEACHER']], server: ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSelectorExists('turbo-frame#user-edit-modal dialog [role="alert"]');
+        self::assertSelectorNotExists('select[name="user_role[role]"]');
+        self::assertSelectorNotExists('turbo-stream');
+        $this->manager()->clear();
+        self::assertSame(UserRole::Student, $this->manager()->find(User::class, $id)->getRole());
+    }
+
     public function testInvalidSelfEditDoesNotInvalidateAdministratorSession(): void
     {
         $this->client->loginUser($this->admin);

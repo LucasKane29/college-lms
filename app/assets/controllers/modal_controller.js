@@ -1,7 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
-    static values = { userId: Number };
+    static values = { userId: Number, action: { type: String, default: 'edit' } };
 
     connect() {
         this.opener = document.activeElement;
@@ -13,7 +13,7 @@ export default class extends Controller {
     disconnect() {
         if (this.element.open) this.element.close();
         const target = this.opener?.isConnected ? this.opener :
-            document.querySelector(`[data-edit-user-id="${this.userIdValue}"]`) ?? document.getElementById('user-catalog');
+            document.querySelector(`[data-${this.actionValue}-user-id="${this.userIdValue}"]`) ?? document.getElementById('user-catalog');
         target?.focus({ preventScroll: true });
     }
 

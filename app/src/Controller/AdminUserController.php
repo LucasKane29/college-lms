@@ -61,15 +61,7 @@ class AdminUserController extends AbstractController
     {
         $user = $users->find($id) ?? throw $this->createNotFoundException();
         $original = clone $user;
-        $catalog = array_intersect_key($request->query->all('catalog'), array_flip([
-            'id', 'email', 'fullName', 'phoneNumber', 'birthDate', 'role', 'studentGroup', 'password', 'createdAtFrom', 'createdAtTo', 'perPage', 'page',
-        ]));
-        foreach ($catalog as $value) {
-            if (!is_scalar($value)) {
-                throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('Invalid catalog parameters.');
-            }
-        }
-        $catalog['page'] = max(1, (int) ($catalog['page'] ?? 1));
+        $catalog = $this->catalogQuery($request);
         $form = $this->createForm(UserEditType::class, $user, [
             'action' => $this->generateUrl('app_admin_user_edit', ['id' => $id, 'catalog' => $catalog]),
         ]);
@@ -82,17 +74,7 @@ class AdminUserController extends AbstractController
             }
         }
         if ($form->isSubmitted() && $form->isValid()) {
-            if (str_contains($request->headers->get('Accept', ''), 'text/vnd.turbo-stream.html')) {
-                $catalogRequest = Request::create($this->generateUrl('app_admin_users'), 'GET', $catalog);
-                $data = $this->catalogData($catalogRequest, $users, $factory);
-
-                return $this->render('admin/user_edit.stream.html.twig', $data + ['successMessage' => 'Дані користувача оновлено.'], new Response(headers: [
-                    'Content-Type' => 'text/vnd.turbo-stream.html; charset=UTF-8',
-                ]));
-            }
-            $this->addFlash('success', 'Дані користувача оновлено.');
-
-            return $this->redirectToRoute('app_admin_users', $catalog, Response::HTTP_SEE_OTHER);
+            return $this->catalogSavedResponse($request, $users, $factory, $catalog, 'Дані користувача оновлено.');
         }
 
         if ($form->isSubmitted()) {
@@ -105,15 +87,18 @@ class AdminUserController extends AbstractController
     }
 
     #[Route('/{id}/role', name: 'app_admin_user_role', requirements: ['id' => '\\d+'], methods: ['GET', 'POST'])]
-    public function role(int $id, Request $request, UserRepository $users): Response
+    public function role(int $id, Request $request, UserRepository $users, EntityManagerInterface $manager, FormFactoryInterface $factory): Response
     {
         $user = $users->find($id) ?? throw $this->createNotFoundException();
+        $catalog = $this->catalogQuery($request);
         if ($user->isRoleLocked()) {
-            return $this->render('admin/user_role.html.twig', ['user' => $user], new Response(
+            return $this->render('admin/user_role.html.twig', ['user' => $user, 'catalog' => $catalog], new Response(
                 status: $request->isMethod('POST') ? Response::HTTP_CONFLICT : Response::HTTP_OK,
             ));
         }
-        $form = $this->createForm(UserRoleType::class, $user);
+        $form = $this->createForm(UserRoleType::class, $user, [
+            'action' => $this->generateUrl('app_admin_user_role', ['id' => $id, 'catalog' => $catalog]),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -121,16 +106,50 @@ class AdminUserController extends AbstractController
             if ($role !== $user->getRole() && !$users->changeRoleIfAllowed($user, $role)) {
                 $form->addError(new FormError('Роль не змінено. Можливо, студента вже додано до групи. Оновіть сторінку.'));
 
-                return $this->render('admin/user_role.html.twig', ['user' => $user, 'roleForm' => $form], new Response(status: Response::HTTP_CONFLICT));
+                return $this->render('admin/user_role.html.twig', ['user' => $user, 'roleForm' => $form, 'catalog' => $catalog], new Response(status: Response::HTTP_CONFLICT));
             }
-            $this->addFlash('success', 'Роль користувача оновлено.');
+            // Bulk role updates bypass Doctrine's identity map; render the refreshed role.
+            $manager->refresh($user);
 
-            return $this->redirectToRoute('app_admin_users', status: Response::HTTP_SEE_OTHER);
+            return $this->catalogSavedResponse($request, $users, $factory, $catalog, 'Роль користувача оновлено.');
         }
 
         return $this->render('admin/user_role.html.twig', [
             'user' => $user,
             'roleForm' => $form,
+            'catalog' => $catalog,
         ]);
+    }
+
+    private function catalogQuery(Request $request): array
+    {
+        $catalog = array_intersect_key($request->query->all('catalog'), array_flip([
+            'id', 'email', 'fullName', 'phoneNumber', 'birthDate', 'role', 'studentGroup', 'password', 'createdAtFrom', 'createdAtTo', 'perPage', 'page',
+        ]));
+        foreach ($catalog as $value) {
+            if (!is_scalar($value)) {
+                throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('Invalid catalog parameters.');
+            }
+        }
+        if (isset($catalog['page'])) {
+            $catalog['page'] = max(1, (int) $catalog['page']);
+        }
+
+        return $catalog;
+    }
+
+    private function catalogSavedResponse(Request $request, UserRepository $users, FormFactoryInterface $factory, array $catalog, string $message): Response
+    {
+        if (str_contains($request->headers->get('Accept', ''), 'text/vnd.turbo-stream.html')) {
+            $catalogRequest = Request::create($this->generateUrl('app_admin_users'), 'GET', $catalog);
+            $data = $this->catalogData($catalogRequest, $users, $factory);
+
+            return $this->render('admin/user_catalog.stream.html.twig', $data + ['successMessage' => $message], new Response(headers: [
+                'Content-Type' => 'text/vnd.turbo-stream.html; charset=UTF-8',
+            ]));
+        }
+        $this->addFlash('success', $message);
+
+        return $this->redirectToRoute('app_admin_users', $catalog, Response::HTTP_SEE_OTHER);
     }
 }
