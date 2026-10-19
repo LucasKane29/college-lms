@@ -1,0 +1,18 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Мої викладачі · College LMS{% endblock %}
+{% block admin_content %}
+    <h1>Мої викладачі</h1>
+    {% if group %}
+        <p class="admin-description">Викладачі дисциплін вашої групи · Усього: {{ total }}</p>
+        <div class="admin-table-scroll">
+            <table class="admin-table">
+                <thead><tr><th scope="col">Ім’я та прізвище</th></tr></thead>
+                <tbody>
+                    {% for teacher in teachers %}<tr data-teacher-id="{{ teacher.id }}"><td>{{ teacher.fullName }}</td></tr>
+                    {% else %}<tr><td class="admin-empty">За вашою групою ще не закріплено дисциплін із викладачами.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'curator/_pagination.html.twig' with {route: 'app_student_teachers'} %}
+    {% else %}<p class="admin-description">Вас ще не додано до групи. Зверніться до куратора.</p>{% endif %}
+{% endblock %}

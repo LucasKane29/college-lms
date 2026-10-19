@@ -1,0 +1,18 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Мої дисципліни · College LMS{% endblock %}
+{% block admin_content %}
+    <h1>Мої дисципліни</h1>
+    {% if group %}
+        <p class="admin-description">Група {{ group.name }} · Дисциплін: {{ total }}</p>
+        <div class="admin-table-scroll">
+            <table class="admin-table">
+                <thead><tr><th scope="col">Дисципліна</th><th scope="col">Викладач</th><th scope="col">Опис</th></tr></thead>
+                <tbody>
+                    {% for discipline in disciplines %}<tr data-discipline-id="{{ discipline.id }}"><td>{{ discipline.name }}</td><td>{{ discipline.teacher.fullName }}</td><td class="discipline-description">{{ discipline.description ?? '—' }}</td></tr>
+                    {% else %}<tr><td colspan="3" class="admin-empty">За вашою групою ще не закріплено дисциплін.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'curator/_pagination.html.twig' with {route: 'app_student_disciplines'} %}
+    {% else %}<p class="admin-description">Вас ще не додано до групи. Зверніться до куратора.</p>{% endif %}
+{% endblock %}

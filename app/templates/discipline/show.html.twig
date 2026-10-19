@@ -1,0 +1,13 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}{{ discipline.name }} · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_teacher_disciplines') }}">← Дисципліни</a>
+    <h1>{{ discipline.name }}</h1>
+    <p class="admin-description">Викладач: {{ discipline.teacher.fullName }} · Створено {{ discipline.createdAt|date('d.m.Y') }}</p>
+    {% if discipline.description %}<p class="discipline-description">{{ discipline.description }}</p>{% endif %}
+    <p class="admin-description"><a href="{{ path('app_teacher_discipline_edit', {id: discipline.id}) }}">Редагувати дисципліну та групи</a></p>
+    <h2>Закріплені групи</h2>
+    <ul class="discipline-group-list">
+        {% for group in discipline.groups %}<li data-group-id="{{ group.id }}">{{ group.name }}</li>{% else %}<li>Дисципліну ще не закріплено за групами.</li>{% endfor %}
+    </ul>
+{% endblock %}

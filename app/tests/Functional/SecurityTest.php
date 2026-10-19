@@ -382,7 +382,7 @@ class SecurityTest extends WebTestCase
             UserRole::Student => ['/account', '/student/group', '/student/disciplines', '/student/teachers'],
             UserRole::Teacher => ['/account', '/teacher/groups', '/teacher/disciplines'],
             UserRole::Curator => ['/account', '/curator/groups', '/curator/students'],
-            UserRole::Admin => ['/account', '/admin/users', '/curator/groups', '/curator/students'],
+            UserRole::Admin => ['/account', '/admin/users', '/curator/groups', '/curator/students', '/teacher/disciplines'],
             default => ['/account'],
         };
         $actual = $this->client->getCrawler()->filter('.workspace-menu a')->each(

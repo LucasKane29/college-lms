@@ -1,0 +1,21 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}{{ creating ? 'Створення дисципліни' : 'Редагування дисципліни' }} · College LMS{% endblock %}
+{% block admin_content %}
+    <div class="workspace-card">
+        <a href="{{ path('app_teacher_disciplines') }}">← Мої дисципліни</a>
+        <h1>{{ creating ? 'Створення дисципліни' : 'Редагування дисципліни' }}</h1>
+        {{ form_start(disciplineForm) }}
+            {% if disciplineForm.vars.errors|length %}<div role="alert">{{ form_errors(disciplineForm) }}</div>{% endif %}
+            <div class="admin-field">{{ form_row(disciplineForm.name) }}</div>
+            <div class="admin-field">{{ form_row(disciplineForm.description) }}</div>
+            <fieldset class="discipline-group-choices">
+                <legend>Закріпити за групами</legend>
+                {{ form_errors(disciplineForm.groups) }}
+                {{ form_widget(disciplineForm.groups) }}
+                {{ form_help(disciplineForm.groups) }}
+                {% if disciplineForm.groups|length == 0 %}<p>Груп ще немає. Їх має створити куратор.</p>{% endif %}
+            </fieldset>
+            <button class="admin-button" type="submit">{{ creating ? 'Створити дисципліну' : 'Зберегти дисципліну' }}</button>
+        {{ form_end(disciplineForm) }}
+    </div>
+{% endblock %}

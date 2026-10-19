@@ -31,12 +31,17 @@ class Group
     #[ORM\OneToMany(mappedBy: 'studentGroup', targetEntity: User::class, fetch: 'EXTRA_LAZY')]
     private Collection $students;
 
+    /** @var Collection<int, Discipline> */
+    #[ORM\ManyToMany(targetEntity: Discipline::class, mappedBy: 'groups', fetch: 'EXTRA_LAZY')]
+    private Collection $disciplines;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
     public function __construct()
     {
         $this->students = new ArrayCollection();
+        $this->disciplines = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -83,6 +88,31 @@ class Group
     public function addStudent(User $student): static
     {
         $student->setStudentGroup($this);
+
+        return $this;
+    }
+
+    /** @return Collection<int, Discipline> */
+    public function getDisciplines(): Collection
+    {
+        return $this->disciplines;
+    }
+
+    public function addDiscipline(Discipline $discipline): static
+    {
+        if (!$this->disciplines->contains($discipline)) {
+            $this->disciplines->add($discipline);
+            $discipline->addGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDiscipline(Discipline $discipline): static
+    {
+        if ($this->disciplines->removeElement($discipline)) {
+            $discipline->removeGroup($this);
+        }
 
         return $this;
     }

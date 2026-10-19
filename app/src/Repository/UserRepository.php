@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\User;
 use App\Entity\Group;
+use App\Entity\Discipline;
 use App\Security\UserRole;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -87,6 +88,25 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->setMaxResults($perPage)->getQuery()->getResult();
 
         return compact('users', 'total', 'page', 'pages', 'perPage');
+    }
+
+    /** @return array{teachers: list<User>, total: int, page: int, pages: int} */
+    public function findTeachersForGroupPage(?Group $group, int $page): array
+    {
+        if (null === $group) {
+            return ['teachers' => [], 'total' => 0, 'page' => 1, 'pages' => 1];
+        }
+        $query = $this->createQueryBuilder('u')->distinct()
+            ->innerJoin(Discipline::class, 'discipline', 'WITH', 'discipline.teacher = u')
+            ->innerJoin('discipline.groups', 'studentGroup')
+            ->where('studentGroup = :group')->setParameter('group', $group);
+        $total = (int) (clone $query)->select('COUNT(DISTINCT u.id)')->getQuery()->getSingleScalarResult();
+        $pages = max(1, (int) ceil($total / 20));
+        $page = min($pages, max(1, $page));
+        $teachers = $query->orderBy('u.fullName', 'ASC')->addOrderBy('u.id', 'ASC')
+            ->setFirstResult(($page - 1) * 20)->setMaxResults(20)->getQuery()->getResult();
+
+        return compact('teachers', 'total', 'page', 'pages');
     }
 
     public function changeRoleIfAllowed(User $user, UserRole $role): bool

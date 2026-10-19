@@ -27,6 +27,22 @@ class GroupRepository extends ServiceEntityRepository
     }
 
     /** @return array{groups: list<Group>, total: int, page: int, pages: int} */
+    public function findForTeacherPage(User $teacher, bool $admin, int $page): array
+    {
+        $query = $this->createQueryBuilder('g')->distinct()->leftJoin('g.curator', 'curator')->addSelect('curator');
+        if (!$admin) {
+            $query->innerJoin('g.disciplines', 'discipline')->andWhere('discipline.teacher = :teacher')->setParameter('teacher', $teacher);
+        }
+        $total = (int) (clone $query)->select('COUNT(DISTINCT g.id)')->getQuery()->getSingleScalarResult();
+        $pages = max(1, (int) ceil($total / 20));
+        $page = min($pages, max(1, $page));
+        $groups = $query->orderBy('g.name', 'ASC')->addOrderBy('g.id', 'ASC')
+            ->setFirstResult(($page - 1) * 20)->setMaxResults(20)->getQuery()->getResult();
+
+        return compact('groups', 'total', 'page', 'pages');
+    }
+
+    /** @return array{groups: list<Group>, total: int, page: int, pages: int} */
     public function findManagedPage(User $actor, bool $admin, int $page): array
     {
         $query = $this->manageableBy($actor, $admin);

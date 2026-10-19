@@ -15,6 +15,14 @@
 .user-edit-dialog form > div { margin-bottom: 16px; }
 .user-edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 24px; }
 .admin-field { margin-bottom: .75rem; }
+.admin-field textarea { width: 100%; padding: .6rem .75rem; border: 1px solid #cbd5e1; border-radius: .5rem; resize: vertical; }
+.discipline-group-choices { margin: 1.25rem 0; }
+.discipline-group-choices legend { margin-bottom: .5rem; font-weight: 600; }
+.discipline-group-choices input[type="checkbox"] { width: 20px; height: 20px; margin-right: .5rem; vertical-align: middle; }
+.discipline-group-choices label { display: inline-block; padding: .5rem 0; }
+.discipline-group-list { margin-top: 1rem; list-style: disc inside; }
+.discipline-group-list li { padding: .5rem 0; }
+.discipline-description { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 1rem; }
 .admin-field input[type="checkbox"] { width: 20px; min-height: 20px; }
 .admin-main a.admin-button { display: inline-block; color: #fff; }
 .admin-remove { min-height: 44px; color: #b91c1c; }

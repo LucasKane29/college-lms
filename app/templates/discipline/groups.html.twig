@@ -1,0 +1,16 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Мої групи · College LMS{% endblock %}
+{% block admin_content %}
+    <h1>{{ is_granted('ROLE_ADMIN') ? 'Усі групи' : 'Мої групи' }}</h1>
+    <p class="admin-description">{{ is_granted('ROLE_ADMIN') ? 'Перелік усіх груп.' : 'Групи, за якими закріплено ваші дисципліни.' }} Груп: {{ total }}</p>
+    <div class="admin-table-scroll">
+        <table class="admin-table">
+            <thead><tr><th scope="col">Група</th><th scope="col">Куратор</th></tr></thead>
+            <tbody>
+                {% for group in groups %}<tr data-group-id="{{ group.id }}"><td>{{ group.name }}</td><td>{{ group.curator.fullName }}</td></tr>
+                {% else %}<tr><td colspan="2" class="admin-empty">За вашими дисциплінами ще не закріплено груп.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'curator/_pagination.html.twig' with {route: 'app_teacher_groups'} %}
+{% endblock %}

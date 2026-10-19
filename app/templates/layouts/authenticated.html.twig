@@ -21,7 +21,8 @@
         ROLE_ADMIN: [
             {label: 'Користувачі', route: 'app_admin_users', icon: 'users'},
             {label: 'Групи', route: 'app_curator_groups', icon: 'group'},
-            {label: 'Усі студенти', route: 'app_curator_students', icon: 'teacher'}
+            {label: 'Усі студенти', route: 'app_curator_students', icon: 'teacher'},
+            {label: 'Дисципліни', route: 'app_teacher_disciplines', icon: 'book'}
         ]
     } %}
     {% set menu = [{label: 'Мій кабінет', route: 'app_account', icon: 'home'}]|merge(roleMenus[app.user.role.value] ?? []) %}
@@ -37,7 +38,7 @@
             </div>
             <ul id="workspace-menu" class="workspace-menu">
                 {% for item in menu %}
-                    {% set active = currentRoute == item.route or (item.route == 'app_admin_users' and currentRoute == 'app_admin_user_role') or (item.route == 'app_curator_groups' and currentRoute in ['app_curator_group_new', 'app_curator_group_show']) or (item.route == 'app_curator_students' and currentRoute == 'app_curator_student_assign') %}
+                    {% set active = currentRoute == item.route or (item.route == 'app_admin_users' and currentRoute == 'app_admin_user_role') or (item.route == 'app_curator_groups' and currentRoute in ['app_curator_group_new', 'app_curator_group_show']) or (item.route == 'app_curator_students' and currentRoute == 'app_curator_student_assign') or (item.route == 'app_teacher_disciplines' and currentRoute in ['app_teacher_discipline_new', 'app_teacher_discipline_show', 'app_teacher_discipline_edit']) %}
                     <li>
                         <a href="{{ path(item.route) }}" class="workspace-menu-link" title="{{ item.label }}" aria-label="{{ item.label }}"{% if active %} aria-current="{{ currentRoute == item.route ? 'page' : 'location' }}"{% endif %}>
                             {% include 'layouts/_menu_icon.html.twig' with {icon: item.icon} only %}
