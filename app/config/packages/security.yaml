@@ -10,6 +10,14 @@ security:
                 class: App\Entity\User
                 property: email
 
+    role_hierarchy:
+        ROLE_STUDENT: ROLE_USER
+        ROLE_TEACHER: ROLE_USER
+        ROLE_CURATOR: ROLE_USER
+        ROLE_HEAD_TEACHER: ROLE_USER
+        ROLE_DIRECTOR: ROLE_USER
+        ROLE_ADMIN: [ROLE_USER, ROLE_STUDENT, ROLE_TEACHER, ROLE_CURATOR, ROLE_HEAD_TEACHER, ROLE_DIRECTOR]
+
     firewalls:
         dev:
             # Ensure dev tools and static assets are always allowed
@@ -35,7 +43,7 @@ security:
     access_control:
         - { path: ^/(login|registration)$, roles: PUBLIC_ACCESS }
         - { path: ^/account$, roles: ROLE_USER }
-        # - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/admin(?:/|$), roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 
 when@test:

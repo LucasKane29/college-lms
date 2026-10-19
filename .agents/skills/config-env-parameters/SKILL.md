@@ -22,17 +22,17 @@ allowed-tools:
 - Storing credentials in the Symfony secrets vault.
 
 ## Default workflow
-1. Decide where the value lives: `.env` default, `.env.local`, real environment, or the vault for secrets.
+1. Decide where the value lives: `.env` default, `../../../app/.env.local`, real environment, or the vault for secrets.
 2. Declare it with a safe committed default, never a real credential.
 3. Inject it with `%env(...)%` and the right processor, through a parameter or `#[Autowire]`.
 4. Put environment-specific settings in `config/packages/<env>/` or `when@<env>` blocks.
 5. Fail fast in the service when a required value is empty.
 
 ## Guardrails
-- Never commit `.env.local`, `.env.*.local` or the vault decryption key.
+- Never commit `../../../app/.env.local`, `.env.*.local` or the vault decryption key.
 - In production, set variables in the server or container environment, not in files.
 - Env values are strings until processed: cast them, do not compare `"false"` to `false`.
-- Remember the loading order: `.env`, `.env.local` (skipped in test), `.env.<env>`, `.env.<env>.local`.
+- Remember the loading order: `.env`, `../../../app/.env.local` (skipped in test), `.env.<env>`, `.env.<env>.local`.
 
 ## Progressive disclosure
 - Use this file for execution posture and risk controls.

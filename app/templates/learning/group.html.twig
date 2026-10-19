@@ -1,0 +1,15 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Моя група · College LMS{% endblock %}
+{% block admin_content %}
+    <h1>Моя група</h1>
+    {% if group %}
+        <p class="admin-description">{{ group.name }} · Куратор: {{ group.curator.fullName }}</p>
+        <div class="admin-table-scroll">
+            <table class="admin-table">
+                <thead><tr><th scope="col">Студенти групи</th></tr></thead>
+                <tbody>{% for student in users %}<tr><td>{{ student.fullName }}</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% include 'curator/_pagination.html.twig' with {route: 'app_student_group'} %}
+    {% else %}<p class="admin-description">Вас ще не додано до групи. Зверніться до куратора.</p>{% endif %}
+{% endblock %}

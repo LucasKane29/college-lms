@@ -32,7 +32,7 @@ allowed-tools:
 ## Guardrails
 - Use the real database and real repositories; do not mock the EntityManager or repositories in data-touching tests.
 - Invalid form submissions assert 422 with `assertResponseIsUnprocessable()` (Symfony 8.0+ behavior).
-- `.env.local` is not loaded in the test environment: use `.env.test` or `.env.test.local`.
+- `../../../app/.env.local` is not loaded in the test environment: use `.env.test` or `.env.test.local`.
 - `assertSessionHasFlashMessage()` requires Symfony 8.1+.
 
 ## Progressive disclosure

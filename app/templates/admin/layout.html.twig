@@ -1,0 +1,10 @@
+{% extends 'layouts/authenticated.html.twig' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/admin.css') }}">
+{% endblock %}
+{% block workspace_content %}
+    <div class="admin-main admin-workspace">
+        {% block admin_content %}{% endblock %}
+    </div>
+{% endblock %}

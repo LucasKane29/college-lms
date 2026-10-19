@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/navigation.css') }}">
+{% endblock %}
+{% block body %}
+    {% set roleMenus = {
+        ROLE_STUDENT: [
+            {label: 'Моя група', route: 'app_student_group', icon: 'group'},
+            {label: 'Мої дисципліни', route: 'app_student_disciplines', icon: 'book'},
+            {label: 'Мої викладачі', route: 'app_student_teachers', icon: 'teacher'}
+        ],
+        ROLE_TEACHER: [
+            {label: 'Мої групи', route: 'app_teacher_groups', icon: 'group'},
+            {label: 'Мої дисципліни', route: 'app_teacher_disciplines', icon: 'book'}
+        ],
+        ROLE_CURATOR: [
+            {label: 'Мої групи', route: 'app_curator_groups', icon: 'group'},
+            {label: 'Усі студенти', route: 'app_curator_students', icon: 'users'}
+        ],
+        ROLE_ADMIN: [
+            {label: 'Керування ролями користувачів', route: 'app_admin_users', icon: 'users'},
+            {label: 'Групи', route: 'app_curator_groups', icon: 'group'},
+            {label: 'Усі студенти', route: 'app_curator_students', icon: 'teacher'}
+        ]
+    } %}
+    {% set menu = [{label: 'Мій кабінет', route: 'app_account', icon: 'home'}]|merge(roleMenus[app.user.role.value] ?? []) %}
+    {% set currentRoute = app.request.attributes.get('_route') %}
+    <a href="#main-content" class="workspace-skip">Перейти до вмісту</a>
+    <div class="workspace" data-controller="sidebar">
+        <nav id="workspace-navigation" class="workspace-navigation" aria-label="Головне меню">
+            <div class="workspace-navigation-header">
+                <button type="button" class="workspace-toggle" data-action="sidebar#toggle" data-sidebar-target="toggle" aria-controls="workspace-menu" aria-expanded="true" aria-label="Згорнути меню" title="Згорнути меню">
+                    {% include 'layouts/_menu_icon.html.twig' with {icon: 'menu'} only %}
+                </button>
+                <a href="{{ path('app_account') }}" class="workspace-brand workspace-label">College LMS</a>
+            </div>
+            <ul id="workspace-menu" class="workspace-menu">
+                {% for item in menu %}
+                    {% set active = currentRoute == item.route or (item.route == 'app_admin_users' and currentRoute == 'app_admin_user_role') or (item.route == 'app_curator_groups' and currentRoute in ['app_curator_group_new', 'app_curator_group_show']) or (item.route == 'app_curator_students' and currentRoute == 'app_curator_student_assign') %}
+                    <li>
+                        <a href="{{ path(item.route) }}" class="workspace-menu-link" title="{{ item.label }}" aria-label="{{ item.label }}"{% if active %} aria-current="{{ currentRoute == item.route ? 'page' : 'location' }}"{% endif %}>
+                            {% include 'layouts/_menu_icon.html.twig' with {icon: item.icon} only %}
+                            <span class="workspace-label">{{ item.label }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="workspace-navigation-footer">
+                <p class="workspace-label workspace-role">{{ app.user.role.label() }}</p>
+                <form action="{{ path('app_logout') }}" method="post">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('sign_out') }}">
+                    <button type="submit" class="workspace-menu-link" title="Вийти з облікового запису" aria-label="Вийти з облікового запису">
+                        {% include 'layouts/_menu_icon.html.twig' with {icon: 'logout'} only %}
+                        <span class="workspace-label">Вийти з облікового запису</span>
+                    </button>
+                </form>
+            </div>
+        </nav>
+        <div class="workspace-content">
+            <header class="workspace-header"><span>{{ app.user.fullName }}</span><span>{{ app.user.role.label() }}</span></header>
+            <main id="main-content" class="workspace-main">
+                {% for message in app.flashes('success') %}<div role="status" class="workspace-notice">{{ message }}</div>{% endfor %}
+                {% block workspace_content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+{% endblock %}

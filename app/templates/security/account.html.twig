@@ -1,14 +1,13 @@
-{% extends 'security/layout.html.twig' %}
+{% extends 'layouts/authenticated.html.twig' %}
 {% block title %}Мій кабінет · College LMS{% endblock %}
 
-{% block auth_content %}
+{% block workspace_content %}
+    <div class="workspace-card">
     <div class="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600" aria-hidden="true"><svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg></div>
     <p class="mb-3 text-xs font-semibold tracking-[0.16em] text-blue-600 uppercase">Мій кабінет</p>
     <h1 class="text-3xl font-semibold tracking-tight">Вітаємо, {{ app.user.fullName }}!</h1>
     <p class="mt-4 text-sm leading-6 text-slate-500">Ви успішно увійшли до College LMS.</p>
     <div class="my-8 rounded-xl border border-slate-200 bg-slate-50 p-5"><p class="text-xs font-medium text-slate-500">Ваш обліковий запис</p><p class="mt-2 break-all font-medium">{{ app.user.email }}</p></div>
-    <form action="{{ path('app_logout') }}" method="post">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token('sign_out') }}">
-        <button type="submit" class="primary-button" data-turbo-submits-with="Виходимо…">Вийти з облікового запису</button>
-    </form>
+    <p class="mb-6 text-sm text-slate-500">Ваша роль: {{ app.user.role.label() }}</p>
+    </div>
 {% endblock %}

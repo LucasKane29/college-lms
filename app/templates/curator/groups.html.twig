@@ -1,0 +1,20 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Групи · College LMS{% endblock %}
+{% block admin_content %}
+    <h1>{{ is_granted('ROLE_ADMIN') ? 'Усі групи' : 'Мої групи' }}</h1>
+    <p class="admin-description">Груп: {{ total }}</p>
+    <p class="admin-description"><a class="admin-button" href="{{ path('app_curator_group_new') }}">Створити групу</a></p>
+    <div class="admin-table-scroll" role="region" aria-label="Групи" tabindex="0">
+        <table class="admin-table">
+            <thead><tr><th scope="col">ID</th><th scope="col">Група</th><th scope="col">Куратор</th><th scope="col">Дата створення</th></tr></thead>
+            <tbody>
+                {% for group in groups %}
+                    <tr><td>{{ group.id }}</td><td><a href="{{ path('app_curator_group_show', {id: group.id}) }}">{{ group.name }}</a></td><td>{{ group.curator.fullName }}</td><td>{{ group.createdAt|date('d.m.Y') }}</td></tr>
+                {% else %}
+                    <tr><td colspan="4" class="admin-empty">Груп ще немає. Створіть першу групу.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'curator/_pagination.html.twig' with {route: 'app_curator_groups'} %}
+{% endblock %}

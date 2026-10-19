@@ -1,0 +1,8 @@
+{% extends 'layouts/authenticated.html.twig' %}
+{% block title %}{{ title }} · College LMS{% endblock %}
+{% block workspace_content %}
+    <section class="workspace-card">
+        <h1>{{ title }}</h1>
+        <p>{{ description }}</p>
+    </section>
+{% endblock %}

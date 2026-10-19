@@ -1,0 +1,13 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Створення групи · College LMS{% endblock %}
+{% block admin_content %}
+    <div class="workspace-card">
+        <a href="{{ path('app_curator_groups') }}">← Групи</a>
+        <h1>Створення групи</h1>
+        {{ form_start(groupForm) }}
+            {{ form_errors(groupForm) }}
+            <div class="admin-field">{{ form_row(groupForm.name) }}</div>
+            <button type="submit" class="admin-button">Створити групу</button>
+        {{ form_end(groupForm) }}
+    </div>
+{% endblock %}

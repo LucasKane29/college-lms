@@ -1,0 +1,7 @@
+{% if pages > 1 %}
+    <nav class="admin-pagination" aria-label="Сторінки списку">
+        {% if page > 1 %}<a rel="prev" href="{{ path(route, (query|default({}))|merge({page: page - 1})) }}">← Попередня</a>{% endif %}
+        <span aria-current="page">Сторінка {{ page }} з {{ pages }}</span>
+        {% if page < pages %}<a rel="next" href="{{ path(route, (query|default({}))|merge({page: page + 1})) }}">Наступна →</a>{% endif %}
+    </nav>
+{% endif %}

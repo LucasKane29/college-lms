@@ -1,0 +1,16 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Додавання студента · College LMS{% endblock %}
+{% block admin_content %}
+    <div class="workspace-card">
+        <a href="{{ path('app_curator_students') }}">← Студенти</a>
+        <h1>Додати студента до групи</h1>
+        <p>{{ student.fullName }} · {{ student.email }}</p>
+        {% if student.studentGroup %}<p>Поточна група: {{ student.studentGroup.name }}. Студент може належати лише до однієї групи.</p>{% endif %}
+        {{ form_start(assignmentForm) }}
+            {{ form_errors(assignmentForm) }}
+            <div class="admin-field">{{ form_row(assignmentForm.group) }}</div>
+            <button class="admin-button" type="submit">Додати до групи</button>
+        {{ form_end(assignmentForm) }}
+        <p>Немає потрібної групи? <a href="{{ path('app_curator_group_new') }}">Створити групу</a>.</p>
+    </div>
+{% endblock %}

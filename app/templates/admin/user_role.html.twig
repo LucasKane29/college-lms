@@ -1,0 +1,14 @@
+{% extends 'layouts/authenticated.html.twig' %}
+{% block title %}Зміна ролі · College LMS{% endblock %}
+{% block workspace_content %}
+    <div class="workspace-card">
+    <a href="{{ path('app_admin_users') }}" class="text-sm text-blue-600">← Користувачі</a>
+    <h1 class="mt-6 text-3xl font-semibold">Зміна ролі</h1>
+    <p class="mt-4 font-medium">{{ user.fullName }}</p>
+    <p class="mb-8 break-all text-sm text-slate-500">{{ user.email }}</p>
+    {{ form_start(roleForm) }}
+        {{ form_row(roleForm.role) }}
+        <button type="submit" class="primary-button mt-6">Зберегти роль</button>
+    {{ form_end(roleForm) }}
+    </div>
+{% endblock %}

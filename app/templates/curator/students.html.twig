@@ -1,0 +1,30 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Студенти · College LMS{% endblock %}
+{% block admin_content %}
+    <h1>Усі студенти</h1>
+    <p class="admin-description">Додавайте студентів без групи до власних груп.</p>
+    <section class="admin-panel" aria-label="Фільтри студентів">
+        {{ form_start(filterForm, {attr: {class: 'admin-filters'}}) }}
+            {{ form_errors(filterForm) }}
+            {% for field in filterForm %}<div class="admin-field">{{ form_row(field) }}</div>{% endfor %}
+            <div class="admin-filter-actions"><button class="admin-button" type="submit">Застосувати</button><a href="{{ path('app_curator_students') }}">Скинути фільтри</a></div>
+        {{ form_end(filterForm) }}
+    </section>
+    {% if validFilters %}
+        <p class="admin-summary">Знайдено студентів: {{ total }}</p>
+        <div class="admin-table-scroll" role="region" aria-label="Список студентів" tabindex="0">
+            <table class="admin-table">
+                <thead><tr><th scope="col">ID</th><th scope="col">Ім’я та прізвище</th><th scope="col">Email</th><th scope="col">Група</th><th scope="col">Дії</th></tr></thead>
+                <tbody>
+                    {% for student in users %}
+                        <tr data-student-id="{{ student.id }}"><td>{{ student.id }}</td><td>{{ student.fullName }}</td><td>{{ student.email }}</td>
+                            <td>{{ student.studentGroup ? student.studentGroup.name : 'Без групи' }}</td>
+                            <td>{% if not student.studentGroup %}<a href="{{ path('app_curator_student_assign', {id: student.id}) }}">Додати до групи<span class="sr-only">: {{ student.fullName }}</span></a>{% endif %}</td>
+                        </tr>
+                    {% else %}<tr><td colspan="5" class="admin-empty">Студентів не знайдено.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'curator/_pagination.html.twig' with {route: 'app_curator_students'} %}
+    {% endif %}
+{% endblock %}

@@ -14,7 +14,7 @@ php bin/phpunit
 ```
 
 Flex creates `phpunit.dist.xml` and `tests/bootstrap.php`. Test env files:
-`.env` → `.env.test` (committed) → `.env.test.local` (gitignored). `.env.local` is **not**
+`.env` → `.env.test` (committed) → `.env.test.local` (gitignored). `../../../app/.env.local` is **not**
 loaded in the test env.
 
 ## Test base classes

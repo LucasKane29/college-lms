@@ -1,0 +1,24 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}{{ group.name }} · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_curator_groups') }}">← Групи</a>
+    <h1>{{ group.name }}</h1>
+    <p class="admin-description">Куратор: {{ group.curator.fullName }} · Студентів: {{ total }}</p>
+    <p class="admin-description"><a href="{{ path('app_curator_students', {withoutGroup: 1}) }}">Додати студентів до групи</a></p>
+    <div class="admin-table-scroll" role="region" aria-label="Студенти групи" tabindex="0">
+        <table class="admin-table">
+            <thead><tr><th scope="col">Ім’я та прізвище</th><th scope="col">Email</th><th scope="col">Дії</th></tr></thead>
+            <tbody>
+                {% for student in users %}
+                    <tr data-student-id="{{ student.id }}"><td>{{ student.fullName }}</td><td>{{ student.email }}</td><td>
+                        <form action="{{ path('app_curator_student_remove', {id: group.id, studentId: student.id}) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token('remove_student_' ~ group.id ~ '_' ~ student.id) }}">
+                            <button type="submit" class="admin-remove" aria-label="Вилучити {{ student.fullName }} з групи">Вилучити з групи</button>
+                        </form>
+                    </td></tr>
+                {% else %}<tr><td colspan="3" class="admin-empty">У групі ще немає студентів.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'curator/_pagination.html.twig' with {route: 'app_curator_group_show', query: {id: group.id}} %}
+{% endblock %}
