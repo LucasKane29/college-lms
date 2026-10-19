@@ -97,7 +97,8 @@ class AdminUserEditTest extends WebTestCase
         self::assertSelectorNotExists('select[name="user_edit[role]"]');
         self::assertSelectorNotExists('input[name="user_edit[password]"]');
         self::assertSelectorNotExists('input[name="user_edit[phoneNumber]"][required]');
-        self::assertSelectorExists('input[name="user_edit[birthDate]"][data-controller="datepicker"][lang="uk"]');
+        self::assertSelectorExists('div[data-controller="datepicker"] input[name="user_edit[birthDate]"][lang="uk"]');
+        self::assertSelectorNotExists('input[data-controller="datepicker"]');
         $this->client->submitForm('Зберегти зміни', $this->values(), serverParameters: ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('content-type', 'text/vnd.turbo-stream.html; charset=UTF-8');

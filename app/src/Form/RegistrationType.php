@@ -32,7 +32,7 @@ class RegistrationType extends AbstractType
                 'label' => 'Дата народження', 'required' => true,
                 'widget' => 'single_text', 'input' => 'datetime_immutable',
                 'invalid_message' => 'Вкажіть коректну дату народження.',
-                'attr' => ['data-controller' => 'datepicker', 'lang' => 'uk', 'autocomplete' => 'bday', 'max' => (new \DateTimeImmutable('today'))->format('Y-m-d')],
+                'attr' => ['lang' => 'uk', 'autocomplete' => 'bday', 'max' => (new \DateTimeImmutable('today'))->format('Y-m-d')],
             ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,

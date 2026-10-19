@@ -67,6 +67,8 @@ class AdminUserListTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorCount($size, 'tbody tr[data-user-id]');
         self::assertSelectorCount(4, 'select[name="perPage"] option');
+        self::assertSelectorCount(3, 'div[data-controller="datepicker"]');
+        self::assertSelectorNotExists('input[data-controller="datepicker"]');
         self::assertSelectorTextContains('.admin-summary', 'Знайдено: 106');
         self::assertSelectorExists('select[name="perPage"] option[value="'.$size.'"][selected]');
         self::assertStringNotContainsString('fixture-user-hash', $this->client->getResponse()->getContent());

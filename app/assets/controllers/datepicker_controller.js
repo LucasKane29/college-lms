@@ -4,7 +4,12 @@ import '../lib/flatpickr/uk.js';
 
 export default class extends Controller {
     connect() {
-        this.picker = window.flatpickr(this.element, {
+        // Flatpickr reparents its input in static mode. Keep the controller on
+        // the outer wrapper so those DOM mutations cannot reconnect it.
+        if (this.picker) return;
+        this.input = this.element.querySelector('input');
+        if (!this.input) return;
+        this.picker = window.flatpickr(this.input, {
             locale: {
                 ...window.flatpickr.l10ns.uk,
                 yearAriaLabel: 'Рік',
@@ -20,20 +25,20 @@ export default class extends Controller {
             allowInput: true,
             disableMobile: true,
             static: true,
-            minDate: this.element.getAttribute('min') || undefined,
-            maxDate: this.element.getAttribute('max') || undefined,
+            minDate: this.input.getAttribute('min') || undefined,
+            maxDate: this.input.getAttribute('max') || undefined,
         });
         const visible = this.picker.altInput;
         this.picker.prevMonthNav.title = 'Попередній місяць';
         this.picker.nextMonthNav.title = 'Наступний місяць';
-        this.originalId = this.element.id;
+        this.originalId = this.input.id;
         // Keep the label and error descriptions attached to the visible input.
         if (this.originalId) {
-            this.element.removeAttribute('id');
+            this.input.removeAttribute('id');
             visible.id = this.originalId;
         }
         for (const name of ['aria-label', 'aria-describedby', 'aria-invalid', 'autocomplete']) {
-            const value = this.element.getAttribute(name);
+            const value = this.input.getAttribute(name);
             if (value !== null) visible.setAttribute(name, value);
         }
         visible.placeholder = 'дд.мм.рррр';
@@ -50,9 +55,11 @@ export default class extends Controller {
     }
 
     disconnect() {
+        if (!this.picker) return;
         this.picker.altInput.removeEventListener('keydown', this.onEscape);
         this.picker.calendarContainer.removeEventListener('keydown', this.onEscape);
         this.picker.destroy();
-        if (this.originalId) this.element.id = this.originalId;
+        if (this.originalId) this.input.id = this.originalId;
+        this.picker = null;
     }
 }

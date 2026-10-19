@@ -44,7 +44,8 @@ class SecurityTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Створіть свій акаунт');
         self::assertSelectorExists('input[type="tel"][name="registration[phoneNumber]"][required][pattern][data-controller="phone-number"]');
-        self::assertSelectorExists('input[type="date"][name="registration[birthDate]"][required][max][lang="uk"][data-controller="datepicker"]');
+        self::assertSelectorExists('div[data-controller="datepicker"] input[type="date"][name="registration[birthDate]"][required][max][lang="uk"]');
+        self::assertSelectorNotExists('input[data-controller="datepicker"]');
 
         $this->client->request('GET', '/account');
         self::assertResponseRedirects('/login');

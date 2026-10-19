@@ -1,0 +1,7 @@
+{% use 'form_div_layout.html.twig' %}
+
+{% block localized_date_widget %}
+    <div class="datepicker-field" data-controller="datepicker">
+        {{ block('date_widget') }}
+    </div>
+{% endblock %}

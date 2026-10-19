@@ -18,7 +18,7 @@ class LocalizedDateType extends AbstractType
         $resolver->setDefaults([
             'widget' => 'single_text',
             'input' => 'datetime_immutable',
-            'attr' => ['data-controller' => 'datepicker', 'lang' => 'uk'],
+            'attr' => ['lang' => 'uk'],
         ]);
     }
 }
