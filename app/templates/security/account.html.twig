@@ -9,5 +9,7 @@
     <p class="mt-4 text-sm leading-6 text-slate-500">Ви успішно увійшли до College LMS.</p>
     <div class="my-8 rounded-xl border border-slate-200 bg-slate-50 p-5"><p class="text-xs font-medium text-slate-500">Ваш обліковий запис</p><p class="mt-2 break-all font-medium">{{ app.user.email }}</p></div>
     <p class="mb-6 text-sm text-slate-500">Ваша роль: {{ app.user.role.label() }}</p>
+    <p class="text-sm text-slate-500">Номер телефона: {{ app.user.phoneNumber ?? 'Не вказано' }}</p>
+    <p class="text-sm text-slate-500">Дата народження: {{ app.user.birthDate ? app.user.birthDate|date('d.m.Y') : 'Не вказано' }}</p>
     </div>
 {% endblock %}

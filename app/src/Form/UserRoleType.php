@@ -14,6 +14,8 @@ class UserRoleType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('role', EnumType::class, [
+            'mapped' => false,
+            'data' => $options['data']->getRole(),
             'class' => UserRole::class,
             'choice_label' => static fn (UserRole $role): string => $role->label(),
             'label' => 'Роль',

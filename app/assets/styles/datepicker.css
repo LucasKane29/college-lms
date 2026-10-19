@@ -1,0 +1,11 @@
+.flatpickr-wrapper { display: block; width: 100%; }
+.flatpickr-calendar { font-family: inherit; }
+.flatpickr-calendar .flatpickr-monthDropdown-months { font: inherit; }
+.flatpickr-calendar .flatpickr-current-month input.cur-year { min-height: 0; padding: 0 0 0 .5ch; border: 0; border-radius: 0; }
+.flatpickr-calendar .flatpickr-monthDropdown-months { width: auto; min-height: 0; border: 0; border-radius: 0; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { background: #2563eb; border-color: #2563eb; }
+.flatpickr-calendar :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+@media (max-width: 540px) {
+    .flatpickr-calendar.static { max-width: 100%; }
+    .flatpickr-calendar .flatpickr-days, .flatpickr-calendar .dayContainer { width: 100%; min-width: 0; max-width: 100%; }
+}

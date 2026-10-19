@@ -7,7 +7,6 @@ use App\Security\UserRole;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -34,6 +33,14 @@ class UserFilterType extends AbstractType
                 'constraints' => [new Assert\Length(max: 180)],
                 'attr' => ['maxlength' => 180, 'placeholder' => 'Частина адреси'],
             ])
+            ->add('phoneNumber', TextType::class, [
+                'label' => 'Номер телефона', 'required' => false,
+                'constraints' => [new Assert\Length(max: 16)], 'attr' => ['maxlength' => 16],
+            ])
+            ->add('birthDate', LocalizedDateType::class, [
+                'label' => 'Дата народження', 'required' => false,
+                'widget' => 'single_text', 'input' => 'datetime_immutable',
+            ])
             ->add('role', EnumType::class, [
                 'class' => UserRole::class,
                 'choice_label' => static fn (UserRole $role): string => $role->label(),
@@ -47,11 +54,11 @@ class UserFilterType extends AbstractType
                 'label' => 'Пароль', 'required' => false, 'placeholder' => 'Будь-який стан',
                 'choices' => ['Встановлено' => 'set', 'Не встановлено' => 'empty'],
             ])
-            ->add('createdAtFrom', DateType::class, [
+            ->add('createdAtFrom', LocalizedDateType::class, [
                 'label' => 'Зареєстровано від', 'required' => false,
                 'widget' => 'single_text', 'input' => 'datetime_immutable',
             ])
-            ->add('createdAtTo', DateType::class, [
+            ->add('createdAtTo', LocalizedDateType::class, [
                 'label' => 'Зареєстровано до (включно)', 'required' => false,
                 'widget' => 'single_text', 'input' => 'datetime_immutable',
             ])

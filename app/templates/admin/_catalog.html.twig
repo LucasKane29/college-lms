@@ -1,0 +1,63 @@
+<turbo-frame id="user-catalog" data-turbo-action="advance" tabindex="-1">
+{% if successMessage is defined %}<div role="status" class="admin-notice">{{ successMessage }}</div>{% endif %}
+    <h1>Користувачі</h1>
+    <p class="admin-description">Перегляд облікових записів і керування ролями.</p>
+    <section class="admin-panel" aria-labelledby="filters-title">
+        <h2 id="filters-title">Фільтри</h2>
+        {{ form_start(filterForm, {attr: {class: 'admin-filters'}}) }}
+            {{ form_errors(filterForm) }}
+            {% for field in filterForm %}
+                <div class="admin-field">{{ form_row(field) }}</div>
+            {% endfor %}
+            <div class="admin-filter-actions">
+                <button type="submit" class="admin-button">Застосувати</button>
+                <a href="{{ path('app_admin_users') }}">Скинути фільтри</a>
+            </div>
+        {{ form_end(filterForm) }}
+    </section>
+    {% if validFilters %}
+        <p class="admin-summary" role="status">Знайдено: {{ total }} · Записи {{ total ? (page - 1) * perPage + 1 : 0 }}–{{ min(page * perPage, total) }} з {{ total }}</p>
+        <div class="admin-table-scroll" role="region" aria-label="Список користувачів" tabindex="0">
+            <table class="admin-table">
+                <caption class="sr-only">Користувачі College LMS</caption>
+                <thead><tr>
+                    <th scope="col">ID</th><th scope="col">Ім’я та прізвище</th><th scope="col">Email</th>
+                    <th scope="col">Телефон</th><th scope="col">Дата народження</th>
+                    <th scope="col">Роль</th><th scope="col">Група</th><th scope="col">Пароль</th><th scope="col">Дата реєстрації</th><th scope="col">Дії</th>
+                </tr></thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr data-user-id="{{ user.id }}">
+                            <td>{{ user.id }}</td><td>{{ user.fullName }}</td><td>{{ user.email }}</td>
+                            <td>{{ user.phoneNumber ?? '—' }}</td><td>{{ user.birthDate ? user.birthDate|date('d.m.Y') : '—' }}</td>
+                            <td><span class="admin-role">{{ user.role.label() }}</span></td>
+                            <td>{{ user.studentGroup ? user.studentGroup.name : '—' }}</td>
+                            <td>{{ user.password is not empty ? 'Встановлено' : 'Не встановлено' }}</td>
+                            <td><time datetime="{{ user.createdAt|date('c') }}">{{ user.createdAt|date('d.m.Y H:i') }}</time></td>
+                            <td>
+                                <a href="{{ path('app_admin_user_edit', {id: user.id, catalog: query|merge({page: page, perPage: perPage})}) }}" data-turbo-frame="user-edit-modal" data-edit-user-id="{{ user.id }}">Редагувати<span class="sr-only">: {{ user.email }}</span></a>
+                                <br>
+                                {% if user.roleLocked %}<span>Роль заблоковано: студент у групі</span>{% else %}<a href="{{ path('app_admin_user_role', {id: user.id}) }}" data-turbo-frame="_top">Змінити роль<span class="sr-only">: {{ user.email }}</span></a>{% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="10" class="admin-empty">Користувачів за обраними фільтрами не знайдено.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pages > 1 %}
+            <nav aria-label="Сторінки користувачів" class="admin-pagination">
+                {% if page > 1 %}
+                    <a href="{{ path('app_admin_users', query|merge({page: 1})) }}">Перша</a>
+                    <a rel="prev" href="{{ path('app_admin_users', query|merge({page: page - 1})) }}">← Попередня</a>
+                {% endif %}
+                <span aria-current="page">Сторінка {{ page }} з {{ pages }}</span>
+                {% if page < pages %}
+                    <a rel="next" href="{{ path('app_admin_users', query|merge({page: page + 1})) }}">Наступна →</a>
+                    <a href="{{ path('app_admin_users', query|merge({page: pages})) }}">Остання</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% endif %}
+</turbo-frame>

@@ -227,7 +227,7 @@ class CuratorTest extends WebTestCase
         self::assertSelectorTextContains('tbody', 'student@example.com');
     }
 
-    public function testAdministratorCanManageAllGroupsAndRoleChangeRemovesMembership(): void
+    public function testAdministratorCanManageAllGroupsButMustRemoveStudentBeforeRoleChange(): void
     {
         $owner = $this->user('owner@example.com', UserRole::Curator);
         $group = $this->group($owner, 'КН-21');
@@ -235,6 +235,7 @@ class CuratorTest extends WebTestCase
         $studentId = $student->getId();
         $groupId = $group->getId();
         $admin = $this->user('admin@example.com', UserRole::Admin);
+        $adminId = $admin->getId();
         $this->client->loginUser($admin);
         $this->client->request('GET', '/curator/groups/'.$groupId);
         self::assertResponseIsSuccessful();
@@ -245,9 +246,42 @@ class CuratorTest extends WebTestCase
         $this->client->request('GET', '/admin/users', ['studentGroup' => $groupId]);
         self::assertResponseIsSuccessful();
         self::assertSelectorCount(1, 'tr[data-user-id]');
+        self::assertSelectorNotExists('a[href="/admin/users/'.$studentId.'/role"]');
+        $this->client->request('GET', '/admin/users/'.$studentId.'/role');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('[role="alert"]', 'Спочатку вилучіть студента з групи');
+        self::assertSelectorNotExists('select[name="user_role[role]"]');
+
+        // Even a valid form token cannot bypass the restriction with a crafted POST.
+        $crawler = $this->client->request('GET', '/admin/users/'.$adminId.'/role');
+        $token = $crawler->filter('input[name="user_role[_token]"]')->attr('value');
+        $this->client->request('POST', '/admin/users/'.$studentId.'/role', ['user_role' => ['role' => 'ROLE_TEACHER', '_token' => $token]]);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame($groupId, $this->membership($studentId));
+        self::assertSame(['ROLE_USER', 'ROLE_STUDENT'], json_decode($this->manager()->getConnection()->fetchOne('SELECT roles FROM users WHERE id = ?', [$studentId]), true, flags: JSON_THROW_ON_ERROR));
+
+        $this->client->request('GET', '/curator/groups/'.$groupId);
+        $this->client->submitForm('Вилучити з групи');
+        self::assertResponseStatusCodeSame(303);
         $this->client->request('GET', '/admin/users/'.$studentId.'/role');
         $this->client->submitForm('Зберегти роль', ['user_role[role]' => 'ROLE_TEACHER']);
         self::assertResponseStatusCodeSame(303);
         self::assertNull($this->membership($studentId));
+        self::assertSame(['ROLE_USER', 'ROLE_TEACHER'], json_decode($this->manager()->getConnection()->fetchOne('SELECT roles FROM users WHERE id = ?', [$studentId]), true, flags: JSON_THROW_ON_ERROR));
+    }
+
+    public function testRoleUpdateRechecksMembershipAfterStudentWasLoaded(): void
+    {
+        $owner = $this->user('owner@example.com', UserRole::Curator);
+        $group = $this->group($owner, 'КН-21');
+        $student = $this->user('student@example.com', UserRole::Student);
+        // Simulate another request assigning the group after this entity was loaded.
+        $this->manager()->getConnection()->update('users', ['group_id' => $group->getId()], ['id' => $student->getId()]);
+        self::assertFalse($student->isRoleLocked());
+        $users = $this->manager()->getRepository(User::class);
+        self::assertFalse($users->changeRoleIfAllowed($student, UserRole::Teacher));
+        self::assertSame($group->getId(), $this->membership($student->getId()));
+        $this->manager()->refresh($student);
+        self::assertSame(UserRole::Student, $student->getRole());
     }
 }

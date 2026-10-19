@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use App\Security\UserRole;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -32,6 +33,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank(message: 'Вкажіть ваше ім’я та прізвище.')]
     #[Assert\Length(min: 2, max: 100, minMessage: 'Вкажіть щонайменше {{ limit }} символи.', maxMessage: 'Ім’я має містити до {{ limit }} символів.')]
     private string $fullName = '';
+
+    #[ORM\Column(length: 16, nullable: true)]
+    #[Assert\NotBlank(message: 'Вкажіть номер телефона.', groups: ['registration'])]
+    #[Assert\Regex(pattern: '/^\+(?:380[0-9]{9}|(?!380)[1-9][0-9]{7,14})$/D', message: 'Вкажіть повний телефон у міжнародному форматі, наприклад +380671234567.')]
+    private ?string $phoneNumber = null;
+
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    #[Assert\NotBlank(message: 'Вкажіть дату народження.', groups: ['registration'])]
+    #[Assert\LessThanOrEqual('today', message: 'Дата народження не може бути в майбутньому.')]
+    private ?\DateTimeImmutable $birthDate = null;
 
     /** @var list<string> */
     #[ORM\Column]
@@ -86,6 +97,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
+    public function getPhoneNumber(): ?string
+    {
+        return $this->phoneNumber;
+    }
+
+    public function setPhoneNumber(?string $phoneNumber): static
+    {
+        $phoneNumber = null === $phoneNumber ? null : preg_replace('/[\s()\-]+/u', '', trim($phoneNumber));
+        $this->phoneNumber = '' === $phoneNumber ? null : $phoneNumber;
+
+        return $this;
+    }
+
+    public function getBirthDate(): ?\DateTimeImmutable
+    {
+        return $this->birthDate;
+    }
+
+    public function setBirthDate(?\DateTimeImmutable $birthDate): static
+    {
+        $this->birthDate = $birthDate?->setTime(0, 0);
+
+        return $this;
+    }
+
     public function getRoles(): array
     {
         return array_values(array_unique([...$this->roles, 'ROLE_USER']));
@@ -104,12 +140,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setRole(UserRole $role): static
     {
-        if (UserRole::Student !== $role) {
-            $this->setStudentGroup(null);
+        if ($role !== $this->getRole() && $this->isRoleLocked()) {
+            throw new \DomainException('Спочатку вилучіть студента з групи, щоб змінити його роль.');
         }
         $this->roles = array_values(array_unique(['ROLE_USER', $role->value]));
 
         return $this;
+    }
+
+    public function isRoleLocked(): bool
+    {
+        return UserRole::Student === $this->getRole() && null !== $this->studentGroup;
     }
 
     public function getStudentGroup(): ?Group

@@ -6,9 +6,15 @@
     <h1 class="mt-6 text-3xl font-semibold">Зміна ролі</h1>
     <p class="mt-4 font-medium">{{ user.fullName }}</p>
     <p class="mb-8 break-all text-sm text-slate-500">{{ user.email }}</p>
+    {% if user.roleLocked %}
+        <p role="alert">Спочатку вилучіть студента з групи, щоб змінити його роль.</p>
+        <p>Група: <a href="{{ path('app_curator_group_show', {id: user.studentGroup.id}) }}">{{ user.studentGroup.name }}</a></p>
+    {% else %}
     {{ form_start(roleForm) }}
+        {{ form_errors(roleForm) }}
         {{ form_row(roleForm.role) }}
         <button type="submit" class="primary-button mt-6">Зберегти роль</button>
     {{ form_end(roleForm) }}
+    {% endif %}
     </div>
 {% endblock %}

@@ -64,7 +64,7 @@ class CuratorController extends AbstractController
         $form = $factory->createNamed('', UserFilterType::class, ['perPage' => 20], [
             'action' => $this->generateUrl('app_curator_students'),
         ]);
-        foreach (['role', 'password', 'createdAtFrom', 'createdAtTo', 'studentGroup'] as $field) {
+        foreach (['role', 'password', 'phoneNumber', 'birthDate', 'createdAtFrom', 'createdAtTo', 'studentGroup'] as $field) {
             $form->remove($field);
         }
         $form->add('withoutGroup', CheckboxType::class, ['label' => 'Лише без групи', 'required' => false]);

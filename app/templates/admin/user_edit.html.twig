@@ -1,0 +1,25 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Редагування користувача · College LMS{% endblock %}
+{% block admin_content %}
+    <turbo-frame id="user-edit-modal">
+        <dialog open class="user-edit-dialog" data-controller="modal" data-modal-user-id-value="{{ editedUser.id }}" data-action="cancel->modal#cancel click->modal#backdrop turbo:before-cache@document->modal#cancel" aria-labelledby="user-edit-title">
+            <div class="user-edit-heading">
+                <h1 id="user-edit-title">Редагування користувача</h1>
+                <button type="button" class="user-edit-close" data-action="modal#cancel" aria-label="Закрити">×</button>
+            </div>
+            <p class="admin-description">{{ editedUser.fullName }} · ID {{ editedUser.id }}</p>
+            {{ form_start(editForm) }}
+                {% if editForm.vars.errors|length %}<div role="alert">{{ form_errors(editForm) }}</div>{% endif %}
+                {% for field in editForm %}
+                    {% if field.vars.name != '_token' %}
+                        {% include 'security/_field.html.twig' with {field: field} %}
+                    {% endif %}
+                {% endfor %}
+                <div class="user-edit-actions">
+                    <button type="submit" class="admin-button" data-turbo-submits-with="Зберігаємо…">Зберегти зміни</button>
+                    <a href="{{ path('app_admin_users', catalog) }}" data-action="modal#cancel" data-turbo-frame="_top">Скасувати</a>
+                </div>
+            {{ form_end(editForm) }}
+        </dialog>
+    </turbo-frame>
+{% endblock %}

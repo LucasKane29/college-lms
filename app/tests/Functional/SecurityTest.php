@@ -43,6 +43,8 @@ class SecurityTest extends WebTestCase
         $this->client->request('GET', '/registration');
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Створіть свій акаунт');
+        self::assertSelectorExists('input[type="tel"][name="registration[phoneNumber]"][required][pattern][data-controller="phone-number"]');
+        self::assertSelectorExists('input[type="date"][name="registration[birthDate]"][required][max][lang="uk"][data-controller="datepicker"]');
 
         $this->client->request('GET', '/account');
         self::assertResponseRedirects('/login');
@@ -58,6 +60,8 @@ class SecurityTest extends WebTestCase
         $user = static::getContainer()->get(EntityManagerInterface::class)->getRepository(User::class)->findOneBy(['email' => 'student@example.com']);
         self::assertInstanceOf(User::class, $user);
         self::assertSame(['ROLE_USER'], $user->getRoles());
+        self::assertSame('+380671234567', $user->getPhoneNumber());
+        self::assertSame('2005-04-15', $user->getBirthDate()?->format('Y-m-d'));
         self::assertSame(['ROLE_USER'], json_decode(static::getContainer()->get(EntityManagerInterface::class)->getConnection()->fetchOne('SELECT roles FROM users WHERE email = ?', ['student@example.com']), true, flags: JSON_THROW_ON_ERROR));
         self::assertNotSame('StudyPass123!', $user->getPassword());
         self::assertTrue(static::getContainer()->get(UserPasswordHasherInterface::class)->isPasswordValid($user, 'StudyPass123!'));
@@ -115,6 +119,7 @@ class SecurityTest extends WebTestCase
     {
         $this->client->request('POST', '/registration', ['registration' => [
             'fullName' => 'Олена Коваленко', 'email' => 'student@example.com',
+            'phoneNumber' => '+380671234567', 'birthDate' => '2005-04-15',
             'plainPassword' => ['first' => 'StudyPass123!', 'second' => 'StudyPass123!'],
             '_token' => 'invalid',
         ]]);
@@ -212,7 +217,7 @@ class SecurityTest extends WebTestCase
 
         $this->client->request('GET', '/account');
         self::assertSelectorExists('a[href="/admin/users"]');
-        $this->client->clickLink('Керування ролями користувачів');
+        $this->client->clickLink('Користувачі');
         self::assertResponseIsSuccessful();
         $this->client->request('GET', '/admin/users/'.$target->getId().'/role');
         self::assertResponseIsSuccessful();
@@ -250,6 +255,7 @@ class SecurityTest extends WebTestCase
         $this->client->request('POST', '/registration', ['registration' => [
             'fullName' => 'Олена Коваленко',
             'email' => 'student@example.com',
+            'phoneNumber' => '+380671234567', 'birthDate' => '2005-04-15',
             'plainPassword' => ['first' => 'StudyPass123!', 'second' => 'StudyPass123!'],
             'roles' => ['ROLE_ADMIN'],
             '_token' => $token,
@@ -443,12 +449,62 @@ class SecurityTest extends WebTestCase
         return $entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
     }
 
+    public static function invalidRegistrationContacts(): iterable
+    {
+        yield 'missing phone' => [['phoneNumber' => null], 'registration_phoneNumber_errors'];
+        yield 'blank phone' => [['phoneNumber' => ''], 'registration_phoneNumber_errors'];
+        yield 'local phone without country code' => [['phoneNumber' => '0671234567'], 'registration_phoneNumber_errors'];
+        yield 'phone letters' => [['phoneNumber' => '+38067abc4567'], 'registration_phoneNumber_errors'];
+        yield 'short phone' => [['phoneNumber' => '+123'], 'registration_phoneNumber_errors'];
+        yield 'incomplete mask' => [['phoneNumber' => '+380 (67) 123'], 'registration_phoneNumber_errors'];
+        yield 'long phone' => [['phoneNumber' => '+1234567890123456'], 'registration_phoneNumber_errors'];
+        yield 'missing birth date' => [['birthDate' => null], 'registration_birthDate_errors'];
+        yield 'blank birth date' => [['birthDate' => ''], 'registration_birthDate_errors'];
+        yield 'nonexistent date' => [['birthDate' => '2005-02-30'], 'registration_birthDate_errors'];
+        yield 'future date' => [['birthDate' => (new \DateTimeImmutable('tomorrow'))->format('Y-m-d')], 'registration_birthDate_errors'];
+    }
+
+    #[DataProvider('invalidRegistrationContacts')]
+    public function testRegistrationRequiresValidPhoneAndBirthDate(array $changes, string $errorId): void
+    {
+        $crawler = $this->client->request('GET', '/registration');
+        $values = array_replace([
+            'fullName' => 'Олена Коваленко', 'email' => 'student@example.com',
+            'phoneNumber' => '+380671234567', 'birthDate' => '2005-04-15',
+            'plainPassword' => ['first' => 'StudyPass123!', 'second' => 'StudyPass123!'],
+            '_token' => $crawler->filter('input[name="registration[_token]"]')->attr('value'),
+        ], $changes);
+        $values = array_filter($values, static fn ($value): bool => null !== $value);
+        // Raw requests bypass HTML validation and check the server boundary.
+        $this->client->request('POST', '/registration', ['registration' => $values]);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorExists('#'.$errorId.'[role="alert"]');
+        self::assertSame(0, static::getContainer()->get(EntityManagerInterface::class)->getRepository(User::class)->count([]));
+    }
+
+    public function testRegistrationAcceptsMaskedPhoneAndStoresCanonicalNumber(): void
+    {
+        $this->client->request('GET', '/registration');
+        $this->client->submitForm('Створити акаунт', [
+            'registration[fullName]' => 'Олена Коваленко',
+            'registration[email]' => 'masked@example.com',
+            'registration[phoneNumber]' => '+380 (67) 123-45-67',
+            'registration[birthDate]' => '2005-04-15',
+            'registration[plainPassword][first]' => 'StudyPass123!',
+            'registration[plainPassword][second]' => 'StudyPass123!',
+        ]);
+        self::assertResponseRedirects('/login', 303);
+        self::assertSame('+380671234567', $this->reloadUser('masked@example.com')->getPhoneNumber());
+    }
+
     private function register(string $email, string $confirmation = 'StudyPass123!'): void
     {
         $this->client->request('GET', '/registration');
         $this->client->submitForm('Створити акаунт', [
             'registration[fullName]' => 'Олена Коваленко',
             'registration[email]' => $email,
+            'registration[phoneNumber]' => '+380671234567',
+            'registration[birthDate]' => '2005-04-15',
             'registration[plainPassword][first]' => 'StudyPass123!',
             'registration[plainPassword][second]' => $confirmation,
         ]);

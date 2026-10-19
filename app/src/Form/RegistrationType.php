@@ -27,6 +27,13 @@ class RegistrationType extends AbstractType
                 'empty_data' => '',
                 'attr' => ['autocomplete' => 'email', 'maxlength' => 180, 'placeholder' => 'name@example.com'],
             ])
+            ->add('phoneNumber', PhoneNumberType::class, ['required' => true])
+            ->add('birthDate', LocalizedDateType::class, [
+                'label' => 'Дата народження', 'required' => true,
+                'widget' => 'single_text', 'input' => 'datetime_immutable',
+                'invalid_message' => 'Вкажіть коректну дату народження.',
+                'attr' => ['data-controller' => 'datepicker', 'lang' => 'uk', 'autocomplete' => 'bday', 'max' => (new \DateTimeImmutable('today'))->format('Y-m-d')],
+            ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'mapped' => false,
@@ -48,6 +55,7 @@ class RegistrationType extends AbstractType
         $resolver->setDefaults([
             'data_class' => User::class,
             'csrf_token_id' => 'registration',
+            'validation_groups' => ['Default', 'registration'],
         ]);
     }
 }

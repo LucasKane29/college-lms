@@ -12,6 +12,8 @@
         {% endif %}
         {% include 'security/_field.html.twig' with {field: registrationForm.fullName} %}
         {% include 'security/_field.html.twig' with {field: registrationForm.email} %}
+        {% include 'security/_field.html.twig' with {field: registrationForm.phoneNumber} %}
+        {% include 'security/_field.html.twig' with {field: registrationForm.birthDate} %}
         {% include 'security/_field.html.twig' with {field: registrationForm.plainPassword.first} %}
         {% include 'security/_field.html.twig' with {field: registrationForm.plainPassword.second} %}
         <button type="submit" class="primary-button" data-turbo-submits-with="Створюємо акаунт…">Створити акаунт <span aria-hidden="true">→</span></button>

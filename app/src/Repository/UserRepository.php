@@ -21,7 +21,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * @param array{id?: ?int, email?: ?string, fullName?: ?string, role?: ?UserRole, studentGroup?: ?Group, withoutGroup?: bool, password?: ?string, createdAtFrom?: ?\DateTimeImmutable, createdAtTo?: ?\DateTimeImmutable, perPage?: int} $filters
+     * @param array{id?: ?int, email?: ?string, fullName?: ?string, phoneNumber?: ?string, birthDate?: ?\DateTimeImmutable, role?: ?UserRole, studentGroup?: ?Group, withoutGroup?: bool, password?: ?string, createdAtFrom?: ?\DateTimeImmutable, createdAtTo?: ?\DateTimeImmutable, perPage?: int} $filters
      * @return array{users: list<User>, total: int, page: int, pages: int, perPage: int}
      */
     public function findFilteredPage(array $filters, int $page, int $perPage): array
@@ -41,12 +41,16 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             $query->andWhere('u.id = :id')->setParameter('id', $filters['id']);
         }
 
-        foreach (['email', 'fullName'] as $field) {
+        foreach (['email', 'fullName', 'phoneNumber'] as $field) {
             if ('' !== ($value = trim($filters[$field] ?? ''))) {
                 // Treat SQL wildcard characters as literal search text.
                 $value = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
                 $query->andWhere("u.$field LIKE :$field ESCAPE '!'")->setParameter($field, '%'.$value.'%');
             }
+        }
+
+        if (null !== ($birthDate = $filters['birthDate'] ?? null)) {
+            $query->andWhere('u.birthDate = :birthDate')->setParameter('birthDate', $birthDate, Types::DATE_IMMUTABLE);
         }
 
         if (null !== ($role = $filters['role'] ?? null)) {
@@ -83,6 +87,17 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->setMaxResults($perPage)->getQuery()->getResult();
 
         return compact('users', 'total', 'page', 'pages', 'perPage');
+    }
+
+    public function changeRoleIfAllowed(User $user, UserRole $role): bool
+    {
+        // Recheck membership in the UPDATE to cover concurrent group assignments.
+        return 1 === $this->createQueryBuilder('u')->update()->set('u.roles', ':roles')
+            ->where('u.id = :id')
+            ->andWhere("(u.studentGroup IS NULL OR u.roles NOT LIKE :studentRole ESCAPE '!')")
+            ->setParameter('id', $user->getId())
+            ->setParameter('roles', array_values(array_unique(['ROLE_USER', $role->value])), Types::JSON)
+            ->setParameter('studentRole', '%"ROLE!_STUDENT"%')->getQuery()->execute();
     }
 
     public function assignStudentToGroup(User $student, Group $group): bool

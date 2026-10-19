@@ -38,6 +38,8 @@ class AdminUserListTest extends WebTestCase
         for ($index = 1; $index <= $count; ++$index) {
             $connection->insert('users', [
                 'email' => 1 === $index ? 'needle@example.test' : sprintf('person%03d@example.test', $index),
+                'phone_number' => 1 === $index ? '+380671234567' : null,
+                'birth_date' => 1 === $index ? '2005-04-15' : null,
                 'full_name' => 1 === $index ? 'Олена Коваленко' : 'Тестовий користувач '.$index,
                 'roles' => json_encode(['ROLE_USER', match ($index) {
                     1 => 'ROLE_STUDENT', 2 => 'ROLE_USER', default => 'ROLE_TEACHER',
@@ -95,6 +97,8 @@ class AdminUserListTest extends WebTestCase
     {
         yield 'name fragment' => [['fullName' => 'Коваленко'], 1, 'needle@example.test'];
         yield 'email fragment' => [['email' => 'needle@'], 1, 'needle@example.test'];
+        yield 'phone fragment' => [['phoneNumber' => '671234'], 1, 'needle@example.test'];
+        yield 'exact birth date' => [['birthDate' => '2005-04-15'], 1, 'needle@example.test'];
         yield 'student role' => [['role' => 'ROLE_STUDENT'], 1, 'needle@example.test'];
         yield 'basic assigned role' => [['role' => 'ROLE_USER'], 1, 'person002@example.test'];
         yield 'empty password' => [['password' => 'empty'], 1, 'person003@example.test'];
@@ -145,6 +149,7 @@ class AdminUserListTest extends WebTestCase
         yield 'unknown role' => [['role' => 'ROLE_SUPER_ADMIN']];
         yield 'unknown password state' => [['password' => 'invalid']];
         yield 'invalid date' => [['createdAtFrom' => '2026-02-30']];
+        yield 'invalid birth date' => [['birthDate' => '2005-02-30']];
         yield 'reversed dates' => [['createdAtFrom' => '2026-10-12', 'createdAtTo' => '2026-10-10']];
     }
 
