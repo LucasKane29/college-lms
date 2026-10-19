@@ -1,0 +1,46 @@
+---
+name: executing-plans
+description: Methodically execute implementation plans with a TDD approach, incremental commits, and continuous validation
+capabilities: [read, search, edit, shell]
+tags: [workflow]
+# projected by `bun run build` — do not edit by hand
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Write
+  - Edit
+  - Bash
+---
+
+# Executing Plans (Symfony)
+
+## Use when
+- An approved implementation plan exists and must be carried out.
+- The work spans several steps that must each land green.
+- Resuming a plan after an interruption or a blocker.
+
+## Default workflow
+1. Read the whole plan, confirm the baseline tests pass, and work on a branch.
+2. For each step, write the test, watch it fail, implement, watch it pass, then refactor.
+3. Commit after each completed step, with a message that names it.
+4. Run the quality gates (style, static analysis, full suite) at the end of each phase.
+5. Track each step's status in the plan, and stop to report when reality contradicts it.
+
+## Guardrails
+- Never skip watching the test fail: a test that never failed proves nothing.
+- One step per commit; do not batch steps.
+- Do not change the plan silently: report the deviation and the reason.
+- On a blocker (failing migration, autowiring error), fix the cause, not the test.
+
+## Progressive disclosure
+- Use this file for execution posture and risk controls.
+- Open references when deep implementation details are needed.
+
+## Output contract
+- One commit per step, tests included.
+- The plan with the status of every step.
+- Final validation results and any deviation from the plan.
+
+## References
+- `reference.md`

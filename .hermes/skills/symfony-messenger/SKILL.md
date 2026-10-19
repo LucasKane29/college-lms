@@ -1,0 +1,48 @@
+---
+name: symfony-messenger
+description: Async message handling with Symfony Messenger; configure transports (RabbitMQ, Redis, Doctrine); implement handlers, middleware, and retry strategies
+capabilities: [read, search, edit, shell]
+tags: [messenger]
+# projected by `bun run build` — do not edit by hand
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Write
+  - Edit
+  - Bash
+---
+
+# Symfony Messenger (Symfony)
+
+## Use when
+- Moving slow or failure-prone work out of the request into a message and an `#[AsMessageHandler]` handler.
+- Choosing a transport (Doctrine, Redis, AMQP, `sync://`, `in-memory://`) and routing messages to it.
+- Running, sizing, and restarting workers with `messenger:consume`.
+- Making handlers safe under redelivery.
+
+## Default workflow
+1. Create the message as a plain `readonly` class that carries IDs, never entities.
+2. Write the handler with `#[AsMessageHandler]` and a typed `__invoke()`: refetch by ID, skip work already done.
+3. Route the message with `#[AsMessage('async')]` or the `routing` key, and declare the transport DSN in `messenger.yaml`.
+4. Set `retry_strategy` and `failure_transport` on the transport.
+5. Consume with `messenger:consume async -vv`, bounded by `--limit`, `--memory-limit`, or `--time-limit`.
+6. Check the wiring with `debug:messenger` and `messenger:stats`, and use `in-memory://` in tests.
+
+## Guardrails
+- Pass entity IDs, never Doctrine entities: proxies and detached state do not serialize cleanly.
+- Delivery is at-least-once: a redelivered message must return quietly, not throw.
+- `PriorityStamp`, `--fetch-size`, `--no-reset`, and `stop_worker_on_signals` are marked 8.1+ in the reference: verify the minimum version first.
+- Restart workers on deploy with `messenger:stop-workers`.
+
+## Progressive disclosure
+- Use this file for execution posture and risk controls.
+- Open references when deep implementation details are needed.
+
+## Output contract
+- The message, its handler, and the routing and transport configuration.
+- The retry and failure transport settings.
+- The worker command, and the `debug:messenger` or `messenger:stats` output that proves the wiring.
+
+## References
+- `reference.md`

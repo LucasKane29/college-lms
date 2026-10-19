@@ -1,0 +1,45 @@
+---
+name: quality-checks
+description: "Run code quality tools: PHP-CS-Fixer for style, PHPStan for static analysis, and type safety checks"
+capabilities: [read, search, edit, shell]
+tags: [workflow, quality]
+# projected by `bun run build` — do not edit by hand
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Write
+  - Edit
+  - Bash
+---
+
+# Quality Checks (Symfony)
+
+## Use when
+- Before committing or opening a pull request.
+- Setting up or tuning PHP-CS-Fixer or PHPStan in a Symfony project.
+- A CI quality job fails and the cause must be found and fixed.
+
+## Default workflow
+1. Detect the tools and configuration files present (`.php-cs-fixer.dist.php`, `phpstan.dist.neon`).
+2. Run the style fixer in dry-run with a diff first, then apply it.
+3. Run PHPStan at the configured level and fix the reported types.
+4. Run the test suite last, after style and analysis are green.
+
+## Guardrails
+- Do not raise the PHPStan level or add baseline entries to make a run pass.
+- Keep style-only changes in their own commit, apart from behavior changes.
+- Do not silence an error with an ignore rule without a written reason.
+- Use the runner the project uses (Docker or host), from the runtime context.
+
+## Progressive disclosure
+- Use this file for execution posture and risk controls.
+- Open references when deep implementation details are needed.
+
+## Output contract
+- The commands run and their result.
+- The fixes applied, style separated from types.
+- Remaining findings that need a decision.
+
+## References
+- `reference.md`

@@ -1,0 +1,43 @@
+---
+name: brainstorming
+description: Structured brainstorming for Symfony projects - explore requirements, identify components, and plan architecture collaboratively
+capabilities: [read, search]
+tags: [workflow]
+# projected by `bun run build` — do not edit by hand
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+---
+
+# Brainstorming (Symfony)
+
+## Use when
+- A feature request is still vague and the requirements are not settled.
+- Several designs are possible and the tradeoffs must be compared before choosing.
+- You need to know which Symfony components a feature touches (entities, handlers, API resources, security, async) before planning.
+- The decision must be made before a plan is written; once it is, hand off to `writing-plans`.
+
+## Default workflow
+1. Restate the goal in one sentence and list what is known, unknown and out of scope.
+2. Ask the open questions (users, data, permissions, failure cases) and note the answers.
+3. Map the feature onto Symfony components: entities, services and handlers, API resources, voters, messages.
+4. Propose two or three designs with their tradeoffs and recommend one.
+5. Record the chosen design, the rejected options and the open risks, then hand off to `writing-plans`.
+
+## Guardrails
+- Do not write code or a step-by-step plan here: brainstorming ends at a chosen design.
+- Prefer the patterns already present in the project over new ones.
+- Ask one question at a time instead of guessing a missing requirement.
+- Keep rejected options in the notes so the decision stays auditable.
+
+## Progressive disclosure
+- Use this file for execution posture and risk controls.
+- Open references when deep implementation details are needed.
+
+## Output contract
+- The goal, scope and answered questions.
+- The components involved and the recommended design with its tradeoffs.
+- Open risks, ready to feed `writing-plans`.
+
+## References
