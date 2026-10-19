@@ -1,0 +1,3 @@
+'Invalid credentials.': 'Неправильна електронна пошта або пароль.'
+'Invalid CSRF token.': 'Сеанс форми закінчився. Оновіть сторінку та спробуйте ще раз.'
+'Too many failed login attempts, please try again later.': 'Забагато спроб входу. Спробуйте пізніше.'

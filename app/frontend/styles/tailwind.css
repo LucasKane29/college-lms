@@ -1,0 +1,30 @@
+@import "tailwindcss" source(none);
+@source "../../templates";
+@source "../../assets/controllers";
+
+@theme {
+    --font-sans: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+    body { @apply bg-slate-50 font-sans text-slate-900 antialiased; }
+    button, a, input { -webkit-tap-highlight-color: transparent; }
+    button:not(:disabled) { @apply cursor-pointer; }
+}
+
+@layer components {
+    .auth-input {
+        @apply block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 shadow-xs outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 aria-invalid:border-red-500 aria-invalid:focus:ring-red-500/10;
+    }
+    .field-label { @apply block text-sm font-semibold text-slate-700; }
+    .primary-button {
+        @apply inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 disabled:cursor-wait disabled:opacity-60;
+    }
+    .text-link { @apply font-semibold text-blue-600 underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600; }
+}
+
+.turbo-progress-bar { background: #2563eb; height: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

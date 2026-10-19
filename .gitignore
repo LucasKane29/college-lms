@@ -58,3 +58,5 @@
 /app/vendor/
 /app/var/
 /app/public/uploads/
+# PHPStorm files
+.idea

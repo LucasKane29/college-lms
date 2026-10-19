@@ -1,0 +1,6 @@
+# Optional local database access for PHPStorm and other SQL clients.
+# docker compose -f docker-compose.yml -f docker-compose.ide.yml up -d --no-deps mysql
+services:
+  mysql:
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3307}:3306"

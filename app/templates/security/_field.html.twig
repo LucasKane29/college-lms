@@ -1,0 +1,18 @@
+{% set password = 'password' in field.vars.block_prefixes %}
+{% set invalid = field.vars.errors|length > 0 %}
+{% set described_by = (field.vars.help ? field.vars.id ~ '_help ' : '') ~ (invalid ? field.vars.id ~ '_errors' : '') %}
+{% set attributes = {class: 'auth-input' ~ (password ? ' pr-12' : '')} %}
+{% if described_by|trim %}{% set attributes = attributes|merge({'aria-describedby': described_by|trim}) %}{% endif %}
+{% if invalid %}{% set attributes = attributes|merge({'aria-invalid': 'true'}) %}{% endif %}
+<div class="space-y-2" {% if password %}data-controller="password-visibility"{% endif %}>
+    {{ form_label(field, null, {label_attr: {class: 'field-label'}}) }}
+    <div class="relative">
+        {% if password %}{% set attributes = attributes|merge({'data-password-visibility-target': 'input'}) %}{% endif %}
+        {{ form_widget(field, {attr: attributes}) }}
+        {% if password %}{% include 'security/_password_toggle.html.twig' with {input_id: field.vars.id} %}{% endif %}
+    </div>
+    {% if field.vars.help %}<p id="{{ field.vars.id }}_help" class="text-xs leading-5 text-slate-500">{{ field.vars.help }}</p>{% endif %}
+    {% if invalid %}
+        <ul id="{{ field.vars.id }}_errors" class="space-y-1 text-sm text-red-600" role="alert">{% for error in field.vars.errors %}<li>{{ error.message }}</li>{% endfor %}</ul>
+    {% endif %}
+</div>

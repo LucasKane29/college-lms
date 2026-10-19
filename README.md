@@ -83,10 +83,41 @@ docker compose --profile worker ps
 | RabbitMQ Management | `http://127.0.0.1:15672` | `rabbitmq:15672` |
 | Mailpit | `http://127.0.0.1:8025` | SMTP: `mailpit:1025` |
 | Portainer | `https://127.0.0.1:9443` | `portainer:9443` |
-| MySQL | порт не опублікований | `mysql:3306` |
+| MySQL | `127.0.0.1:3307` з `docker-compose.ide.yml`; інакше порт не опублікований | `mysql:3306` |
 | Redis | порт не опублікований | `redis:6379` |
 | AMQP | порт не опублікований | `rabbitmq:5672` |
 | PHP FPM | порт не опублікований | `app:9000` |
+
+### Підключення до MySQL з PHPStorm
+
+У WSL, з кореня проєкту, увімкніть локальний порт MySQL:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ide.yml config --quiet
+docker compose -f docker-compose.yml -f docker-compose.ide.yml up -d --no-deps --wait mysql
+```
+
+MySQL доступний на `127.0.0.1:3307`. За потреби змініть `MYSQL_PORT` у кореневому
+`.env` і повторіть команду. Використовуйте обидва Compose-файли при подальшому
+`up`, щоб зберегти опублікований порт. Внутрішня адреса Symfony — `mysql:3306`.
+
+У PHPStorm відкрийте **Database → + → Data Source → MySQL**:
+
+| Поле | Значення |
+|---|---|
+| Host | `127.0.0.1` |
+| Port | `3307` або значення `MYSQL_PORT` |
+| User | `MYSQL_USER` з кореневого `.env` (типово `college`) |
+| Password | `MYSQL_PASSWORD` з кореневого `.env` |
+| Database | `MYSQL_DATABASE` з кореневого `.env` (типово `college`) |
+
+Кореневий `.env` належить Docker Compose; `app/.env` належить Symfony.
+Якщо Docker запущено з іншої копії проєкту у WSL, беріть пароль із `.env` саме тієї копії.
+Натисніть **Download missing driver files**, якщо IDE пропонує завантажити драйвер,
+потім **Test Connection → OK**. [Документація PHPStorm](https://www.jetbrains.com/help/phpstorm/mysql.html).
+
+Порт прив’язаний до `127.0.0.1`. Для віддаленого сервера з увімкненим IDE-файлом
+використовуйте тунель `ssh -N -L 3307:127.0.0.1:3307 deploy@SERVER_IP`.
 
 Для віддаленого stage відкрийте SSH-тунель зі свого ПК, підставивши адресу сервера:
 

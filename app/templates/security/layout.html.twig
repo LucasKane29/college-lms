@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">Перейти до вмісту</a>
+<div class="min-h-screen lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <aside class="relative hidden overflow-hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col xl:p-16" aria-label="Про College LMS">
+        <div class="pointer-events-none absolute -top-40 -right-48 h-[520px] w-[520px] rounded-full bg-blue-600/20 blur-3xl" aria-hidden="true"></div>
+        <div class="relative flex items-center gap-3">
+            {% include 'security/_logo.html.twig' %}
+            <span class="text-xl font-semibold tracking-tight">College<span class="ml-1.5 font-normal text-slate-400">LMS</span></span>
+        </div>
+        <div class="relative my-auto py-20">
+            <span class="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-400/10 px-3 py-1.5 text-xs font-medium tracking-wide text-blue-200"><span class="h-1.5 w-1.5 rounded-full bg-blue-400"></span> НАВЧАННЯ ПОЧИНАЄТЬСЯ ТУТ</span>
+            <h2 class="max-w-lg text-4xl leading-tight font-semibold tracking-tight xl:text-5xl">Більше знань.<br><span class="text-blue-400">Більше можливостей.</span></h2>
+            <p class="mt-6 max-w-sm text-base leading-7 text-slate-400">Ваш навчальний простір, де зручно рухатися вперед — крок за кроком, щодня.</p>
+            <div class="mt-12 space-y-6">
+                {% for number, feature in [
+                    {title: 'Усе для навчання в одному місці', text: 'Курси, матеріали та завдання.'},
+                    {title: 'Власний темп і зрозумілий шлях', text: 'Повертайтеся до важливого, коли потрібно.'},
+                    {title: 'Знання, що відкривають можливості', text: 'Розвивайте навички для наступного кроку.'}
+                ] %}
+                    <div class="flex gap-4">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm text-blue-300" aria-hidden="true">0{{ number + 1 }}</span>
+                        <div><p class="text-sm font-medium text-slate-100">{{ feature.title }}</p><p class="mt-1 text-sm text-slate-400">{{ feature.text }}</p></div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <p class="relative text-xs text-slate-500">College LMS · Простір для вашого розвитку</p>
+    </aside>
+    <div class="flex min-h-screen flex-col bg-white">
+        <header class="flex items-center justify-between gap-4 px-6 py-6 sm:px-10 lg:justify-end">
+            <div class="flex items-center gap-2 lg:hidden">{% include 'security/_logo.html.twig' %}<span class="font-semibold tracking-tight">College LMS</span></div>
+            <span class="text-xs font-medium text-slate-500">Українська <span aria-hidden="true" class="ml-1 text-blue-600">/ UA</span></span>
+        </header>
+        <main id="main-content" class="flex flex-1 items-center justify-center px-6 py-8 sm:px-10 lg:py-12">
+            <div class="w-full max-w-[420px]">
+                {% for message in app.flashes('success') %}
+                    <div role="status" class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-800">{{ message }}</div>
+                {% endfor %}
+                {% block auth_content %}{% endblock %}
+            </div>
+        </main>
+        <footer class="px-6 py-6 text-center text-xs leading-5 text-slate-400">© {{ 'now'|date('Y') }} College LMS. Усі права захищено.</footer>
+    </div>
+</div>
+{% endblock %}
