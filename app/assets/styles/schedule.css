@@ -1,0 +1,67 @@
+.schedule-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 24px; }
+.schedule-top h1, .schedule-toolbar h1, .schedule-pair-form h1 { font-size: 28px; font-weight: 650; letter-spacing: -.025em; }
+.schedule-eyebrow { margin-bottom: 8px; font-size: 12px; color: #2563eb; text-transform: uppercase; letter-spacing: .12em; }
+.schedule-profile { display: grid; gap: 4px; padding: 14px 18px; max-width: 340px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; font-size: 13px; overflow-wrap: anywhere; }
+.schedule-profile span { color: #64748b; }
+.schedule-panel { padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; }
+.schedule-toolbar, .schedule-filter, .schedule-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.schedule-toolbar { justify-content: space-between; }
+.schedule-filter label { display: grid; gap: 6px; font-size: 13px; color: #475569; }
+.schedule-panel input, .schedule-dialog select { min-height: 42px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; font: inherit; }
+.schedule-button { display: inline-flex; justify-content: center; align-items: center; min-height: 42px; padding: 9px 16px; border: 1px solid #2563eb; border-radius: 8px; background: #2563eb; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+.schedule-button:hover { background: #1d4ed8; }
+.schedule-button.secondary { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
+.schedule-hint { margin: 14px 0; font-size: 13px; line-height: 1.6; color: #64748b; }
+.schedule-paging { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 24px 0; padding: 14px 0; border-block: 1px solid #e2e8f0; font-size: 14px; }
+.schedule-paging a, .schedule-panel a:not(.schedule-button):not(.schedule-cell):not(.schedule-month-day), .schedule-dialog a { color: #1d4ed8; }
+.schedule-paging [aria-disabled] { color: #94a3b8; }
+.schedule-day { margin-top: 24px; }
+.schedule-day h2 { margin-bottom: 12px; font-size: 17px; font-weight: 600; }
+.schedule-day h2 span { display: inline-block; margin-left: 8px; font-size: 12px; color: #64748b; font-weight: 400; }
+.schedule-table-scroll { overflow-x: auto; border-radius: 10px; }
+.schedule-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.schedule-table th, .schedule-table td { padding: 12px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+.schedule-table tr > :first-child { border-left: 1px solid #e2e8f0; }
+.schedule-table thead th { border-top: 1px solid #e2e8f0; background: #f1f5f9; min-width: 160px; }
+.schedule-table th:first-child { position: sticky; left: 0; z-index: 1; min-width: 110px; background: #f8fafc; }
+.schedule-table thead th span { display: block; margin-top: 5px; color: #64748b; font-size: 12px; font-weight: 400; }
+.schedule-table td { min-width: 170px; padding: 5px; }
+.schedule-cell { display: flex; flex-direction: column; gap: 8px; min-height: 90px; height: 100%; padding: 12px; border-radius: 8px; line-height: 1.4; }
+.schedule-cell.filled { background: #eff6ff; color: #1e3a8a; }
+a.schedule-cell:hover { outline: 2px solid #93c5fd; outline-offset: -2px; background: #dbeafe; }
+.schedule-cell span { color: #64748b; font-size: 12px; }
+.schedule-cell .schedule-add { margin: auto; color: #2563eb; }
+.schedule-free { display: block; padding: 24px; text-align: center; color: #94a3b8; }
+.schedule-empty { padding: 20px; background: #f8fafc; border-radius: 8px; color: #64748b; }
+.schedule-month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.schedule-weekday { padding: 8px; color: #64748b; font-size: 12px; }
+.schedule-month-day { display: flex; flex-direction: column; gap: 8px; min-height: 82px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
+.schedule-month-day span { font-size: 12px; color: #64748b; }
+.schedule-month-day.selected, .schedule-month-day:hover { border-color: #2563eb; background: #eff6ff; }
+.schedule-dialog { position: fixed; inset: 0; margin: auto; width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; padding: 28px; border: 1px solid #cbd5e1; border-radius: 16px; background: #fff; box-shadow: 0 24px 80px #0f172a33; }
+.schedule-dialog::backdrop { background: #0f172a80; }
+.schedule-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.schedule-dialog-heading h1 { font-size: 22px; font-weight: 600; }
+.schedule-dialog-heading a { padding: 4px 10px; font-size: 26px; }
+.schedule-dialog p { margin: 8px 0; color: #64748b; font-size: 14px; }
+.schedule-dialog form, .schedule-pair-form form { margin-top: 20px; }
+.schedule-dialog label, .schedule-pair-form label { display: block; margin: 16px 0 6px; font-size: 14px; font-weight: 500; }
+.schedule-dialog select { width: 100%; }
+.schedule-dialog [role=alert], .schedule-pair-form [role=alert], .schedule-dialog form ul, .schedule-pair-form form ul { color: #b91c1c; font-size: 14px; }
+.schedule-actions { margin-top: 24px; align-items: center; }
+.schedule-delete { color: #b91c1c; padding: 8px 0; cursor: pointer; }
+.schedule-pair-form { max-width: 640px; }
+.schedule-pair-form fieldset { margin-top: 20px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; }
+.schedule-pair-form legend { padding: 0 8px; font-weight: 600; }
+.schedule-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 760px) {
+    .schedule-top { flex-direction: column; }
+    .schedule-profile { align-self: flex-end; width: 100%; }
+    .schedule-panel { padding: 14px; }
+    .schedule-filter { align-items: stretch; width: 100%; }
+    .schedule-filter label { flex: 1; min-width: 140px; }
+    .schedule-filter input { width: 100%; }
+    .schedule-month { gap: 3px; }
+    .schedule-month-day { padding: 6px 3px; min-height: 65px; font-size: 12px; }
+    .schedule-month-day span { font-size: 10px; overflow-wrap: anywhere; }
+}

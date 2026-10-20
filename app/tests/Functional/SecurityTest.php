@@ -70,7 +70,8 @@ class SecurityTest extends WebTestCase
         $this->client->submitForm('Увійти', ['email' => 'STUDENT@EXAMPLE.COM', 'password' => 'StudyPass123!']);
         self::assertResponseRedirects('/account', 303);
         $this->client->followRedirect();
-        self::assertSelectorTextContains('h1', 'Олена Коваленко');
+        self::assertSelectorTextContains('h1', 'Розклад занять');
+        self::assertSelectorTextContains('.schedule-profile', 'Олена Коваленко');
         self::assertSelectorTextContains('main', 'student@example.com');
 
         $this->client->request('GET', '/registration');
@@ -374,7 +375,7 @@ class SecurityTest extends WebTestCase
         $this->client->loginUser($this->createUser('menu@example.com', $role));
         $this->client->request('GET', '/account');
         self::assertResponseIsSuccessful();
-        self::assertSelectorNotExists('aside');
+        self::assertSelectorExists('aside.schedule-profile');
         self::assertSelectorExists('[data-controller="sidebar"]');
         self::assertSelectorExists('button[aria-controls="workspace-menu"][aria-expanded="true"]');
         self::assertSelectorExists('.workspace-menu a[href="/account"][aria-current="page"]');

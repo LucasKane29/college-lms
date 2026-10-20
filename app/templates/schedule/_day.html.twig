@@ -1,0 +1,29 @@
+{% set dateKey = day|date('Y-m-d') %}
+{% set weekdays = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя'] %}
+<div class="schedule-day">
+    <h2>{{ weekdays[day|date('N') - 1] }}, {{ day|date('d.m.Y') }} <span>{{ day|date('N') >= 6 ? 'Вихідний день' : 'Будній день' }}</span></h2>
+    <div class="schedule-table-scroll" tabindex="0" role="region" aria-label="Розклад на {{ day|date('d.m.Y') }}">
+        <table class="schedule-table">
+            <caption class="schedule-sr-only">Розклад занять на {{ day|date('d.m.Y') }}</caption>
+            <thead><tr><th scope="col">Група</th>{% for pair in pairs %}<th scope="col">{{ pair.number }} пара<span>{{ pair.startOn(day)|date('H:i') }}–{{ pair.endOn(day)|date('H:i') }}</span></th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for group in groups %}
+                    <tr><th scope="row">{{ group.name }}</th>
+                        {% for pair in pairs %}
+                            {% set lesson = grid[dateKey][group.id][pair.id] ?? null %}
+                            <td>
+                                {% if is_granted('ROLE_HEAD_TEACHER') %}
+                                    <a class="schedule-cell{% if lesson %} filled{% endif %}" href="{{ path('app_schedule_cell', query|merge({date: dateKey, groupId: group.id, pairId: pair.id})) }}" data-turbo-frame="schedule-modal" aria-label="{{ lesson ? 'Редагувати' : 'Додати' }} заняття: {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
+                                        {% if lesson %}<strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% else %}<span class="schedule-add">+ Додати</span>{% endif %}
+                                    </a>
+                                {% elseif lesson %}
+                                    <div class="schedule-cell filled"><strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span></div>
+                                {% else %}<span class="schedule-free">—</span>{% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

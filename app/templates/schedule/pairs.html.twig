@@ -1,0 +1,12 @@
+{% extends 'schedule/layout.html.twig' %}
+{% block title %}Налаштування пар · College LMS{% endblock %}
+{% block workspace_content %}
+    <div class="schedule-toolbar"><h1>Налаштування пар</h1><a href="{{ path('app_account') }}">← До розкладу</a><a class="schedule-button" href="{{ path('app_schedule_pair_new') }}">Додати пару</a></div>
+    <p class="schedule-hint">Будні — понеділок–п’ятниця. Вихідні — субота й неділя. Зміни часу застосовуються до всіх дат розкладу.</p>
+    <div class="schedule-panel schedule-table-scroll">
+        <table class="schedule-table">
+            <thead><tr><th scope="col">Номер пари</th><th scope="col">Будні</th><th scope="col">Вихідні</th><th scope="col">Дії</th></tr></thead>
+            <tbody>{% for pair in pairs %}<tr data-pair-id="{{ pair.id }}"><th scope="row">{{ pair.number }}</th><td>{{ pair.weekdayStart|date('H:i') }}–{{ pair.weekdayEnd|date('H:i') }}</td><td>{{ pair.weekendStart|date('H:i') }}–{{ pair.weekendEnd|date('H:i') }}</td><td><a href="{{ path('app_schedule_pair_edit', {id: pair.id}) }}">Редагувати пару {{ pair.number }}</a></td></tr>{% else %}<tr><td colspan="4">Пари ще не додано.</td></tr>{% endfor %}</tbody>
+        </table>
+    </div>
+{% endblock %}

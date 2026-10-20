@@ -1,15 +1,45 @@
-{% extends 'layouts/authenticated.html.twig' %}
+{% extends 'schedule/layout.html.twig' %}
 {% block title %}Мій кабінет · College LMS{% endblock %}
 
 {% block workspace_content %}
-    <div class="workspace-card">
-    <div class="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600" aria-hidden="true"><svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg></div>
-    <p class="mb-3 text-xs font-semibold tracking-[0.16em] text-blue-600 uppercase">Мій кабінет</p>
-    <h1 class="text-3xl font-semibold tracking-tight">Вітаємо, {{ app.user.fullName }}!</h1>
-    <p class="mt-4 text-sm leading-6 text-slate-500">Ви успішно увійшли до College LMS.</p>
-    <div class="my-8 rounded-xl border border-slate-200 bg-slate-50 p-5"><p class="text-xs font-medium text-slate-500">Ваш обліковий запис</p><p class="mt-2 break-all font-medium">{{ app.user.email }}</p></div>
-    <p class="mb-6 text-sm text-slate-500">Ваша роль: {{ app.user.role.label() }}</p>
-    <p class="text-sm text-slate-500">Номер телефона: {{ app.user.phoneNumber ?? 'Не вказано' }}</p>
-    <p class="text-sm text-slate-500">Дата народження: {{ app.user.birthDate ? app.user.birthDate|date('d.m.Y') : 'Не вказано' }}</p>
+    <div class="schedule-top">
+        <div><p class="schedule-eyebrow">Мій кабінет</p><h1>Розклад занять</h1></div>
+        <aside class="schedule-profile" aria-label="Ваш обліковий запис">
+            <strong>{{ app.user.fullName }}</strong><span>{{ app.user.role.label() }}</span>
+            <span>{{ app.user.email }}</span>
+            <span>Телефон: {{ app.user.phoneNumber ?? 'Не вказано' }}</span>
+            <span>Дата народження: {{ app.user.birthDate ? app.user.birthDate|date('d.m.Y') : 'Не вказано' }}</span>
+        </aside>
     </div>
+    <section class="schedule-panel" aria-label="Календар занять">
+        <div class="schedule-toolbar">
+            <form action="{{ path('app_account') }}" method="get" class="schedule-filter">
+                <label>Початкова дата<input type="date" name="from" value="{{ from|date('Y-m-d') }}" required></label>
+                <label>Кінцева дата<input type="date" name="to" value="{{ to|date('Y-m-d') }}" required></label>
+                <button class="schedule-button" type="submit">Показати</button>
+            </form>
+            {% if is_granted('ROLE_HEAD_TEACHER') %}<a class="schedule-button secondary" href="{{ path('app_schedule_pairs') }}">Налаштування пар</a>{% endif %}
+        </div>
+        <p class="schedule-hint">До тижня — по днях, до місяця — по тижнях, понад місяць — по місяцях. Діапазон — до 366 днів.</p>
+        <nav class="schedule-paging" aria-label="Перегортання розкладу">
+            {% if previous %}<a href="{{ path('app_account', query|merge({cursor: previous, day: null})) }}" rel="prev">← Назад</a>{% else %}<span aria-disabled="true">← Назад</span>{% endif %}
+            <strong>{{ visibleFrom|date('d.m.Y') }}{% if visibleFrom != visibleTo %} — {{ visibleTo|date('d.m.Y') }}{% endif %} · {{ {day: 'День', week: 'Тиждень', month: 'Місяць'}[mode] }}</strong>
+            {% if next %}<a href="{{ path('app_account', query|merge({cursor: next, day: null})) }}" rel="next">Далі →</a>{% else %}<span aria-disabled="true">Далі →</span>{% endif %}
+        </nav>
+        {% if not groups %}<p class="schedule-empty">Для вашого облікового запису поки немає груп для відображення.</p>{% endif %}
+        {% if not pairs %}<p class="schedule-empty">Пари ще не налаштовано.{% if is_granted('ROLE_HEAD_TEACHER') %} Додайте їх у налаштуваннях пар.{% endif %}</p>{% endif %}
+        {% if mode == 'month' %}
+            <div class="schedule-month" aria-label="Дні місяця">
+                {% for label in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'] %}<span class="schedule-weekday">{{ label }}</span>{% endfor %}
+                {% for day in days %}
+                    <a class="schedule-month-day{% if day == selected %} selected{% endif %}" style="{% if loop.first %}grid-column-start: {{ day|date('N') }}{% endif %}" href="{{ path('app_account', query|merge({day: day|date('Y-m-d')})) }}"{% if day == selected %} aria-current="date"{% endif %}>
+                        <strong>{{ day|date('d.m') }}</strong><span>Занять: {{ counts[day|date('Y-m-d')] ?? 0 }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if is_granted('ROLE_HEAD_TEACHER') %}<p class="schedule-hint">Натисніть порожню клітинку, щоб додати заняття, або назву дисципліни, щоб змінити чи видалити його.</p>{% endif %}
+        {% if groups and pairs %}{% for day in tableDays %}{% include 'schedule/_day.html.twig' %}{% endfor %}{% endif %}
+    </section>
+    <turbo-frame id="schedule-modal"></turbo-frame>
 {% endblock %}

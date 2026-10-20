@@ -14,7 +14,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class SecurityController extends AbstractController
 {
@@ -61,13 +60,6 @@ class SecurityController extends AbstractController
         }
 
         return $this->render('security/registration.html.twig', ['registrationForm' => $form]);
-    }
-
-    #[Route('/account', name: 'app_account', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
-    public function account(): Response
-    {
-        return $this->render('security/account.html.twig');
     }
 
     #[Route('/logout', name: 'app_logout', methods: ['POST'])]

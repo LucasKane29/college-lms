@@ -1,0 +1,14 @@
+{% extends 'schedule/layout.html.twig' %}
+{% block title %}{{ creating ? 'Нова пара' : 'Редагування пари' }} · College LMS{% endblock %}
+{% block workspace_content %}
+    <div class="schedule-panel schedule-pair-form">
+        <h1>{{ creating ? 'Нова пара' : 'Редагування пари' }}</h1>
+        {{ form_start(pairForm) }}
+            <div role="alert">{{ form_errors(pairForm) }}</div>
+            {{ form_row(pairForm.number) }}
+            <fieldset><legend>Будні</legend>{{ form_row(pairForm.weekdayStart) }}{{ form_row(pairForm.weekdayEnd) }}</fieldset>
+            <fieldset><legend>Вихідні</legend>{{ form_row(pairForm.weekendStart) }}{{ form_row(pairForm.weekendEnd) }}</fieldset>
+            <div class="schedule-actions"><button class="schedule-button" type="submit">Зберегти пару</button><a href="{{ path('app_schedule_pairs') }}">Скасувати</a></div>
+        {{ form_end(pairForm) }}
+    </div>
+{% endblock %}

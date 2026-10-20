@@ -1,0 +1,24 @@
+{% extends 'schedule/layout.html.twig' %}
+{% block title %}Заняття · College LMS{% endblock %}
+{% block workspace_content %}
+    <a href="{{ path('app_account', query) }}">← До розкладу</a>
+    <turbo-frame id="schedule-modal">
+        <dialog open class="schedule-dialog" data-controller="schedule-dialog" data-action="cancel->schedule-dialog#close click->schedule-dialog#backdrop turbo:before-cache@document->schedule-dialog#close" aria-labelledby="lesson-title">
+            <div class="schedule-dialog-heading"><h1 id="lesson-title">{{ existing ? 'Редагування заняття' : 'Нове заняття' }}</h1><a href="{{ path('app_account', query) }}" data-action="schedule-dialog#close" aria-label="Закрити">×</a></div>
+            <p>{{ lesson.group.name }} · {{ lesson.lessonDate|date('d.m.Y') }} · {{ lesson.pair.number }} пара</p>
+            <p>{{ lesson.pair.startOn(lesson.lessonDate)|date('H:i') }}–{{ lesson.pair.endOn(lesson.lessonDate)|date('H:i') }}</p>
+            {{ form_start(lessonForm, {attr: {'data-turbo-frame': '_top'}}) }}
+                <div role="alert">{{ form_errors(lessonForm) }}</div>
+                {{ form_row(lessonForm.discipline) }}
+                <p class="schedule-hint">У списку — дисципліни, призначені цій групі. Якщо список порожній, спочатку додайте групу до дисципліни.</p>
+                <div class="schedule-actions"><button class="schedule-button" type="submit">Зберегти заняття</button><a href="{{ path('app_account', query) }}" data-action="schedule-dialog#close">Скасувати</a></div>
+            {{ form_end(lessonForm) }}
+            {% if existing %}
+                <form method="post" action="{{ path('app_schedule_delete', query|merge({id: lesson.id})) }}" data-turbo-frame="_top" data-turbo-confirm="Видалити це заняття з розкладу?">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_schedule_' ~ lesson.id) }}">
+                    <button type="submit" class="schedule-delete">Видалити заняття</button>
+                </form>
+            {% endif %}
+        </dialog>
+    </turbo-frame>
+{% endblock %}
