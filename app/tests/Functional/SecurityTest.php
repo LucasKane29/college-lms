@@ -383,6 +383,7 @@ class SecurityTest extends WebTestCase
             UserRole::Student => ['/account', '/student/group', '/student/disciplines', '/student/teachers'],
             UserRole::Teacher => ['/account', '/teacher/groups', '/teacher/disciplines'],
             UserRole::Curator => ['/account', '/curator/groups', '/curator/students'],
+            UserRole::HeadTeacher => ['/account', '/teacher/disciplines'],
             UserRole::Admin => ['/account', '/admin/users', '/curator/groups', '/curator/students', '/teacher/disciplines'],
             default => ['/account'],
         };
@@ -406,7 +407,7 @@ class SecurityTest extends WebTestCase
         ];
         foreach ($routes as $url => $requiredRole) {
             $this->client->request('GET', $url);
-            if (UserRole::Admin === $role || $requiredRole === $role) {
+            if (UserRole::Admin === $role || $requiredRole === $role || (UserRole::HeadTeacher === $role && '/teacher/disciplines' === $url)) {
                 self::assertResponseIsSuccessful();
                 self::assertSelectorNotExists('aside');
                 if (UserRole::Admin !== $role) {

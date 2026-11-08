@@ -3,32 +3,37 @@
 namespace App\Controller;
 
 use App\Entity\Discipline;
+use App\Entity\LessonTopic;
 use App\Form\DisciplineType;
+use App\Form\LessonTopicType;
 use App\Repository\DisciplineRepository;
 use App\Repository\GroupRepository;
 use App\Repository\UserRepository;
 use App\Security\DisciplineVoter;
 use App\Security\UserRole;
+use App\Service\ScheduleManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\ExpressionLanguage\Expression;
 
 #[Route('/teacher')]
-#[IsGranted('ROLE_TEACHER')]
+#[IsGranted(new Expression("is_granted('ROLE_TEACHER') or is_granted('ROLE_HEAD_TEACHER')"))]
 class TeacherDisciplineController extends AbstractController
 {
     #[Route('/disciplines', name: 'app_teacher_disciplines', methods: ['GET'])]
     public function index(Request $request, DisciplineRepository $disciplines): Response
     {
         return $this->render('discipline/index.html.twig', $disciplines->findManagedPage(
-            $this->getUser(), $this->isGranted('ROLE_ADMIN'), $request->query->getInt('page', 1),
+            $this->getUser(), $this->isGranted('ROLE_HEAD_TEACHER'), $request->query->getInt('page', 1),
         ));
     }
 
     #[Route('/disciplines/new', name: 'app_teacher_discipline_new', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_TEACHER')]
     public function create(Request $request, EntityManagerInterface $manager): Response
     {
         $discipline = (new Discipline())->setTeacher($this->getUser());
@@ -46,9 +51,44 @@ class TeacherDisciplineController extends AbstractController
     }
 
     #[Route('/disciplines/{id}', name: 'app_teacher_discipline_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
-    public function show(int $id, DisciplineRepository $disciplines): Response
+    public function show(int $id, Request $request, DisciplineRepository $disciplines, ScheduleManager $schedule, EntityManagerInterface $manager): Response
     {
-        return $this->render('discipline/show.html.twig', ['discipline' => $this->managedDiscipline($id, $disciplines)]);
+        $discipline = $disciplines->find($id) ?? throw $this->createNotFoundException();
+        $this->denyAccessUnlessGranted(DisciplineVoter::VIEW, $discipline);
+
+        $topicForm = $this->isGranted(DisciplineVoter::MANAGE, $discipline)
+            ? $this->createForm(LessonTopicType::class, (new LessonTopic())->setDiscipline($discipline), [
+                'action' => $this->generateUrl('app_teacher_discipline_topic_new', ['id' => $id]),
+            ]) : null;
+
+        return $this->render('discipline/show.html.twig', [
+            'discipline' => $discipline, 'topicForm' => $topicForm?->createView(),
+            'topics' => $manager->getRepository(LessonTopic::class)->findBy(['discipline' => $discipline], ['id' => 'ASC']),
+        ]
+            + $schedule->disciplinePage($discipline, $request->query->getInt('page', 1)));
+    }
+
+    #[Route('/disciplines/{id}/topics/new', name: 'app_teacher_discipline_topic_new', requirements: ['id' => '\\d+'], methods: ['POST'])]
+    public function createTopic(int $id, Request $request, DisciplineRepository $disciplines, ScheduleManager $schedule, EntityManagerInterface $manager): Response
+    {
+        $discipline = $this->managedDiscipline($id, $disciplines);
+        $topic = (new LessonTopic())->setDiscipline($discipline);
+        $form = $this->createForm(LessonTopicType::class, $topic, [
+            'action' => $this->generateUrl('app_teacher_discipline_topic_new', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $manager->persist($topic);
+            $manager->flush();
+            $this->addFlash('success', 'Тему додано до каталогу дисципліни.');
+
+            return $this->redirectToRoute('app_teacher_discipline_show', ['id' => $id], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->render('discipline/show.html.twig', [
+            'discipline' => $discipline, 'topicForm' => $form->createView(),
+            'topics' => $manager->getRepository(LessonTopic::class)->findBy(['discipline' => $discipline], ['id' => 'ASC']),
+        ] + $schedule->disciplinePage($discipline, 1), new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 
     #[Route('/disciplines/{id}/edit', name: 'app_teacher_discipline_edit', requirements: ['id' => '\\d+'], methods: ['GET', 'POST'])]
@@ -68,6 +108,7 @@ class TeacherDisciplineController extends AbstractController
     }
 
     #[Route('/groups', name: 'app_teacher_groups', methods: ['GET'])]
+    #[IsGranted('ROLE_TEACHER')]
     public function groups(Request $request, GroupRepository $groups): Response
     {
         return $this->render('discipline/groups.html.twig', $groups->findForTeacherPage(
@@ -76,6 +117,7 @@ class TeacherDisciplineController extends AbstractController
     }
 
     #[Route('/groups/{id}', name: 'app_teacher_group_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
+    #[IsGranted('ROLE_TEACHER')]
     public function students(int $id, Request $request, GroupRepository $groups, UserRepository $users): Response
     {
         $group = $groups->find($id) ?? throw $this->createNotFoundException();

@@ -1,9 +1,9 @@
 {% extends 'admin/layout.html.twig' %}
 {% block title %}Дисципліни · College LMS{% endblock %}
 {% block admin_content %}
-    <h1>{{ is_granted('ROLE_ADMIN') ? 'Усі дисципліни' : 'Мої дисципліни' }}</h1>
+    <h1>{{ is_granted('ROLE_HEAD_TEACHER') ? 'Усі дисципліни' : 'Мої дисципліни' }}</h1>
     <p class="admin-description">Дисциплін: {{ total }}</p>
-    <p class="admin-description"><a class="admin-button" href="{{ path('app_teacher_discipline_new') }}">Створити дисципліну</a></p>
+    {% if is_granted('ROLE_TEACHER') %}<p class="admin-description"><a class="admin-button" href="{{ path('app_teacher_discipline_new') }}">Створити дисципліну</a></p>{% endif %}
     <div class="admin-table-scroll" role="region" aria-label="Список дисциплін" tabindex="0">
         <table class="admin-table">
             <thead><tr><th scope="col">Дисципліна</th><th scope="col">Викладач</th><th scope="col">Групи</th><th scope="col">Дії</th></tr></thead>
@@ -13,7 +13,7 @@
                         <td><a href="{{ path('app_teacher_discipline_show', {id: discipline.id}) }}">{{ discipline.name }}</a></td>
                         <td>{{ discipline.teacher.fullName }}</td>
                         <td>{% for group in discipline.groups %}{{ group.name }}{% if not loop.last %}, {% endif %}{% else %}Не закріплено{% endfor %}</td>
-                        <td><a href="{{ path('app_teacher_discipline_edit', {id: discipline.id}) }}">Редагувати<span class="sr-only">: {{ discipline.name }}</span></a></td>
+                        <td>{% if is_granted('DISCIPLINE_MANAGE', discipline) %}<a href="{{ path('app_teacher_discipline_edit', {id: discipline.id}) }}">Редагувати<span class="sr-only">: {{ discipline.name }}</span></a>{% else %}—{% endif %}</td>
                     </tr>
                 {% else %}<tr><td colspan="4" class="admin-empty">Дисциплін ще немає. Створіть першу дисципліну.</td></tr>{% endfor %}
             </tbody>

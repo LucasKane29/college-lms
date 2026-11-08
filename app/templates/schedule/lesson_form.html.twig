@@ -7,9 +7,10 @@
             <div class="schedule-dialog-heading"><h1 id="lesson-title">{{ existing ? 'Редагування заняття' : 'Нове заняття' }}</h1><a href="{{ path('app_account', query) }}" data-action="schedule-dialog#close" aria-label="Закрити">×</a></div>
             <p>{{ lesson.group.name }} · {{ lesson.lessonDate|date('d.m.Y') }} · {{ lesson.pair.number }} пара</p>
             <p>{{ lesson.pair.startOn(lesson.lessonDate)|date('H:i') }}–{{ lesson.pair.endOn(lesson.lessonDate)|date('H:i') }}</p>
-            {{ form_start(lessonForm, {attr: {'data-turbo-frame': '_top'}}) }}
+            {{ form_start(lessonForm, {attr: {'data-turbo-frame': '_top', 'data-controller': 'lesson-topic'}}) }}
                 <div role="alert">{{ form_errors(lessonForm) }}</div>
                 {{ form_row(lessonForm.discipline) }}
+                {{ form_row(lessonForm.topic) }}
                 <p class="schedule-hint">У списку — дисципліни, призначені цій групі. Якщо список порожній, спочатку додайте групу до дисципліни.</p>
                 <div class="schedule-actions"><button class="schedule-button" type="submit">Зберегти заняття</button><a href="{{ path('app_account', query) }}" data-action="schedule-dialog#close">Скасувати</a></div>
             {{ form_end(lessonForm) }}

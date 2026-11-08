@@ -5,6 +5,9 @@ namespace App\Tests\Functional;
 use App\Entity\Discipline;
 use App\Entity\Group;
 use App\Entity\User;
+use App\Entity\Pair;
+use App\Entity\Schedule;
+use App\Entity\LessonTopic;
 use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -64,7 +67,7 @@ class DisciplineTest extends WebTestCase
     public static function forbiddenRoles(): iterable
     {
         foreach (UserRole::cases() as $role) {
-            if (!in_array($role, [UserRole::Teacher, UserRole::Admin], true)) yield $role->value => [$role];
+            if (!in_array($role, [UserRole::Teacher, UserRole::Admin, UserRole::HeadTeacher], true)) yield $role->value => [$role];
         }
     }
 
@@ -204,15 +207,19 @@ class DisciplineTest extends WebTestCase
         $this->discipline($teacher, 'Алгебра', [$second]);
         $id = $discipline->getId();
         $secondId = $second->getId();
-        $this->client->loginUser($teacher);
+        $this->client->loginUser($this->user('head@example.com', UserRole::HeadTeacher));
         $this->client->request('GET', '/teacher/disciplines/'.$id.'/edit');
-        $this->client->submitForm('Зберегти дисципліну', ['discipline[groups]' => [$secondId]]);
+        $token = $this->client->getCrawler()->filter('input[name="discipline[_token]"]')->attr('value');
+        $this->client->request('POST', '/teacher/disciplines/'.$id.'/edit', ['discipline' => [
+            'name' => 'Математика', 'groups' => [$secondId], '_token' => $token,
+        ]]);
         self::assertResponseStatusCodeSame(303);
         $this->manager()->clear();
         $saved = $this->manager()->find(Discipline::class, $id);
         self::assertCount(1, $saved->getGroups());
         self::assertSame($secondId, $saved->getGroups()->first()->getId());
         self::assertSame(2, $this->manager()->getRepository(Group::class)->count([]));
+        $this->client->loginUser($this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']));
         $this->client->request('GET', '/teacher/groups');
         self::assertSelectorCount(1, 'tr[data-group-id]');
     }
@@ -308,6 +315,72 @@ class DisciplineTest extends WebTestCase
         self::assertSame($teacherId, $saved->getTeacher()->getId());
     }
 
+    public function testTeacherCanViewOwnDisciplineButCannotEditItOrItsGroups(): void
+    {
+        $teacher = $this->user('teacher@example.com', UserRole::Teacher);
+        $discipline = $this->discipline($teacher, 'Математика');
+        $url = '/teacher/disciplines/'.$discipline->getId();
+        $this->client->loginUser($teacher);
+        $this->client->request('GET', $url);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('a[href="'.$url.'/edit"]');
+        self::assertSelectorNotExists('form[name="lesson_topic"]');
+        $this->client->request('GET', $url.'/edit');
+        self::assertResponseStatusCodeSame(403);
+        $this->client->request('POST', $url.'/edit', ['discipline' => ['name' => 'Підміна']]);
+        self::assertResponseStatusCodeSame(403);
+        $this->client->request('POST', $url.'/topics/new', ['lesson_topic' => ['name' => 'Підміна']]);
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testHeadTeacherCanManageTopicsAndSeeScheduleForLinkedGroups(): void
+    {
+        $teacher = $this->user('teacher@example.com', UserRole::Teacher);
+        $curator = $this->user('curator@example.com', UserRole::Curator);
+        $first = $this->group($curator, 'КН-21');
+        $second = $this->group($curator, 'КН-22');
+        $unlinked = $this->group($curator, 'Не пов’язана');
+        $discipline = $this->discipline($teacher, 'Математика', [$first, $second]);
+        $other = $this->discipline($teacher, 'Інша дисципліна', [$first]);
+        $pair = (new Pair())->setWeekendStart(new \DateTimeImmutable('09:00'))->setWeekendEnd(new \DateTimeImmutable('11:00'));
+        $this->manager()->persist($pair);
+        $this->manager()->flush();
+        $url = '/teacher/disciplines/'.$discipline->getId();
+        $this->client->loginUser($this->user('head@example.com', UserRole::HeadTeacher));
+        $this->client->request('GET', '/teacher/disciplines');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(2, 'tr[data-discipline-id]');
+        $this->client->request('GET', $url);
+        self::assertSelectorExists('a[href="'.$url.'/edit"]');
+        $this->client->submitForm('Додати тему', ['lesson_topic[name]' => '  Похідна функції  ']);
+        self::assertResponseRedirects($url, 303);
+        $manager = $this->manager();
+        $topic = $manager->getRepository(LessonTopic::class)->findOneBy(['name' => 'Похідна функції']);
+        self::assertNotNull($topic);
+        foreach ([[$first, $discipline, '2026-10-24', true], [$second, $discipline, '2026-10-26', false], [$unlinked, $discipline, '2026-10-27', false], [$first, $other, '2026-10-28', false]] as [$group, $subject, $date, $withTopic]) {
+            $lesson = (new Schedule())->setGroup($manager->find(Group::class, $group->getId()))
+                ->setDiscipline($manager->find(Discipline::class, $subject->getId()))->setPair($manager->find(Pair::class, $pair->getId()))
+                ->setLessonDate(new \DateTimeImmutable($date))->setTopic($withTopic ? $topic : null);
+            $manager->persist($lesson);
+        }
+        $manager->flush();
+        $this->client->request('GET', $url);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(2, 'tr[data-lesson-id]');
+        self::assertSelectorTextContains('tr[data-lesson-id]:first-child', '24.10.2026');
+        self::assertSelectorTextContains('tr[data-lesson-id]:first-child', 'Субота');
+        self::assertSelectorTextContains('tr[data-lesson-id]:first-child', '09:00–11:00');
+        self::assertSelectorTextContains('tr[data-lesson-id]:first-child', 'Похідна функції');
+        self::assertSelectorTextContains('tr[data-lesson-id]:last-child', 'КН-22');
+        self::assertSelectorTextContains('tr[data-lesson-id]:last-child', 'Тему ще не обрано');
+        self::assertSelectorTextNotContains('tbody', 'Не пов’язана');
+        $this->client->submitForm('Додати тему', ['lesson_topic[name]' => '   ']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('main', 'Вкажіть тему заняття.');
+        $this->client->request('GET', '/teacher/disciplines/new');
+        self::assertResponseStatusCodeSame(403);
+    }
+
     public function testPaginationPreservesAllGroupLinks(): void
     {
         $teacher = $this->user('teacher@example.com', UserRole::Teacher);
@@ -326,5 +399,30 @@ class DisciplineTest extends WebTestCase
         self::assertSelectorCount(1, 'tr[data-discipline-id]');
         self::assertSelectorTextContains('tbody', 'КН-21');
         self::assertSelectorTextContains('tbody', 'КН-22');
+    }
+
+    public function testDisciplineSchedulePaginationAndTopicCsrf(): void
+    {
+        $teacher = $this->user('teacher@example.com', UserRole::Teacher);
+        $group = $this->group($this->user('curator@example.com', UserRole::Curator), 'КН-21');
+        $discipline = $this->discipline($teacher, 'Математика', [$group]);
+        $pair = new Pair();
+        $this->manager()->persist($pair);
+        for ($i = 0; $i < 21; ++$i) {
+            $this->manager()->persist((new Schedule())->setDiscipline($discipline)->setGroup($group)->setPair($pair)
+                ->setLessonDate((new \DateTimeImmutable('2026-10-01'))->modify('+'.$i.' days')));
+        }
+        $this->manager()->flush();
+        $url = '/teacher/disciplines/'.$discipline->getId();
+        $this->client->loginUser($this->user('admin@example.com', UserRole::Admin));
+        $this->client->request('GET', $url);
+        self::assertSelectorCount(20, 'tr[data-lesson-id]');
+        $this->client->clickLink('Наступна →');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(1, 'tr[data-lesson-id]');
+        self::assertSelectorTextContains('tr[data-lesson-id]', '21.10.2026');
+        $this->client->request('POST', $url.'/topics/new', ['lesson_topic' => ['name' => 'Тест', '_token' => 'invalid']]);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(0, $this->manager()->getRepository(LessonTopic::class)->count([]));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Group;
+use App\Entity\Discipline;
 use App\Entity\Pair;
 use App\Entity\Schedule;
 use App\Entity\User;
@@ -53,6 +54,9 @@ final class ScheduleManager
     public function lessonError(Schedule $lesson): ?string
     {
         $discipline = $lesson->getDiscipline();
+        if (null !== $lesson->getTopic() && $lesson->getTopic()->getDiscipline() !== $discipline) {
+            return 'Оберіть тему, що належить вибраній дисципліні.';
+        }
         if (!$discipline || !$discipline->getGroups()->contains($lesson->getGroup())) {
             return 'Оберіть дисципліну, призначену цій групі.';
         }
@@ -70,6 +74,25 @@ final class ScheduleManager
         }
 
         return null;
+    }
+
+    /** @return array{lessons: list<Schedule>, total: int, page: int, pages: int} */
+    public function disciplinePage(Discipline $discipline, int $page): array
+    {
+        $query = $this->manager->createQueryBuilder()->select('s', 'g', 'p')->from(Schedule::class, 's')
+            ->join('s.group', 'g')->join('s.pair', 'p')->leftJoin('s.topic', 'topic')->addSelect('topic');
+        // Restrict the schedule to groups currently linked to this discipline.
+        $query->where('s.discipline = :discipline')
+            ->andWhere('g.id IN (:groups)')->setParameter('discipline', $discipline)
+            ->setParameter('groups', $discipline->getGroups()->map(static fn (Group $group) => $group->getId())->toArray() ?: [0]);
+        $total = (int) (clone $query)->select('COUNT(s.id)')->getQuery()->getSingleScalarResult();
+        $pages = max(1, (int) ceil($total / 20));
+        $page = min($pages, max(1, $page));
+        $lessons = $query->orderBy('s.lessonDate', 'ASC')->addOrderBy('p.number', 'ASC')
+            ->addOrderBy('g.name', 'ASC')->addOrderBy('s.id', 'ASC')
+            ->setFirstResult(($page - 1) * 20)->setMaxResults(20)->getQuery()->getResult();
+
+        return compact('lessons', 'total', 'page', 'pages');
     }
 
     public function pairError(Pair $pair): ?string

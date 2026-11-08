@@ -8,6 +8,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[ORM\Table(name: 'schedule')]
 #[ORM\UniqueConstraint(name: 'UNIQ_SCHEDULE_SLOT', columns: ['lesson_date', 'group_id', 'pair_id'])]
+#[ORM\Index(name: 'IDX_SCHEDULE_TOPIC', columns: ['topic_id'])]
 class Schedule
 {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column]
@@ -29,6 +30,13 @@ class Schedule
     #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
     #[Assert\NotNull]
     private ?Discipline $discipline = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?LessonTopic $topic = null;
+
+    public function getTopic(): ?LessonTopic { return $this->topic; }
+    public function setTopic(?LessonTopic $topic): static { $this->topic = $topic; return $this; }
 
     public function getId(): ?int { return $this->id; }
     public function getLessonDate(): \DateTimeImmutable { return $this->lessonDate; }

@@ -7,6 +7,7 @@ use App\Entity\Group;
 use App\Entity\Pair;
 use App\Entity\Schedule;
 use App\Entity\User;
+use App\Entity\LessonTopic;
 use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -73,6 +74,29 @@ class ScheduleTest extends WebTestCase
         $this->client->request('GET', $this->cell());
         $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->disciplineId]);
         self::assertResponseStatusCodeSame(303);
+    }
+
+    public function testLessonTopicMustBelongToSelectedDiscipline(): void
+    {
+        $topic = (new LessonTopic())->setName('Похідна')->setDiscipline($this->manager()->find(Discipline::class, $this->disciplineId));
+        $other = (new LessonTopic())->setName('Рівняння')->setDiscipline($this->manager()->find(Discipline::class, $this->otherDisciplineId));
+        $this->manager()->persist($topic);
+        $this->manager()->persist($other);
+        $this->manager()->flush();
+        $topicId = $topic->getId();
+        $otherId = $other->getId();
+        $this->client->request('GET', $this->cell());
+        $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->disciplineId, 'schedule[topic]' => $otherId]);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('[role="alert"]', 'Оберіть тему, що належить вибраній дисципліні.');
+        self::assertSame(0, $this->manager()->getRepository(Schedule::class)->count([]));
+        $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->disciplineId, 'schedule[topic]' => $topicId]);
+        self::assertResponseStatusCodeSame(303);
+        $this->manager()->clear();
+        $saved = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId]);
+        self::assertSame($topicId, $saved->getTopic()->getId());
+        $this->client->request('GET', '/teacher/disciplines/'.$this->disciplineId);
+        self::assertSelectorTextContains('tr[data-lesson-id]', 'Похідна');
     }
 
     public function testHeadCanCreateEditAndDeleteThroughTableModal(): void

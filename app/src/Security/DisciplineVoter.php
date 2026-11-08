@@ -12,6 +12,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 class DisciplineVoter extends Voter
 {
     public const MANAGE = 'DISCIPLINE_MANAGE';
+    public const VIEW = 'DISCIPLINE_VIEW';
 
     public function __construct(private readonly AccessDecisionManagerInterface $decisionManager)
     {
@@ -19,7 +20,7 @@ class DisciplineVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return self::MANAGE === $attribute && $subject instanceof Discipline;
+        return in_array($attribute, [self::MANAGE, self::VIEW], true) && $subject instanceof Discipline;
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
@@ -28,11 +29,11 @@ class DisciplineVoter extends Voter
         if (!$user instanceof User) {
             return false;
         }
-        if ($this->decisionManager->decide($token, ['ROLE_ADMIN'])) {
+        if ($this->decisionManager->decide($token, ['ROLE_HEAD_TEACHER'])) {
             return true;
         }
 
-        return $this->decisionManager->decide($token, ['ROLE_TEACHER'])
+        return self::VIEW === $attribute && $this->decisionManager->decide($token, ['ROLE_TEACHER'])
             && null !== $user->getId()
             && $subject->getTeacher()?->getId() === $user->getId();
     }
