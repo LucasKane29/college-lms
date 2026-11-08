@@ -12,9 +12,11 @@
                         {% for pair in pairs %}
                             {% set lesson = grid[dateKey][group.id][pair.id] ?? null %}
                             <td>
-                                {% if is_granted('ROLE_HEAD_TEACHER') %}
+                                {% if lesson and selectedDiscipline|default(null) and lesson.discipline.id != selectedDiscipline.id %}
+                                    <span class="schedule-cell schedule-occupied">Зайнято іншою дисципліною</span>
+                                {% elseif is_granted('ROLE_HEAD_TEACHER') %}
                                     <a class="schedule-cell{% if lesson %} filled{% endif %}" href="{{ path('app_schedule_cell', query|merge({date: dateKey, groupId: group.id, pairId: pair.id})) }}" data-turbo-frame="schedule-modal" aria-label="{{ lesson ? 'Редагувати' : 'Додати' }} заняття: {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
-                                        {% if lesson %}<strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% else %}<span class="schedule-add">+ Додати</span>{% endif %}
+                                        {% if lesson %}<strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% if lesson.topic %}<span>{{ lesson.topic.name }}</span>{% endif %}{% else %}<span class="schedule-add">+ Додати</span>{% endif %}
                                     </a>
                                 {% elseif lesson %}
                                     <div class="schedule-cell filled"><strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span></div>

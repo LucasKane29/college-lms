@@ -17,7 +17,7 @@ final class ScheduleCalendar
     }
 
     /** @return array<string, mixed> */
-    public function build(array $input): array
+    public function build(array $input, bool $weekly = false): array
     {
         $today = new \DateTimeImmutable('today', new \DateTimeZone('Europe/Kyiv'));
         $from = $this->date($input['from'] ?? $today->format('Y-m-d'));
@@ -32,7 +32,7 @@ final class ScheduleCalendar
         // Clamp the month boundary, including ranges beginning on the 29th–31st.
         $nextMonth = $from->modify('first day of next month');
         $monthEnd = $nextMonth->setDate((int) $nextMonth->format('Y'), (int) $nextMonth->format('m'), min((int) $from->format('d'), (int) $nextMonth->format('t')))->modify('-1 day');
-        $mode = $length <= 7 ? 'day' : ($to <= $monthEnd ? 'week' : 'month');
+        $mode = !$weekly && $length <= 7 ? 'day' : ($to <= $monthEnd ? 'week' : 'month');
         $cursor = isset($input['cursor']) ? $this->date($input['cursor']) : $from;
         $cursor = max($from, min($to, $cursor));
         $start = match ($mode) {
@@ -62,5 +62,22 @@ final class ScheduleCalendar
             'next' => $end < $to ? $end->modify('+1 day')->format('Y-m-d') : null,
             'query' => $query,
         ];
+    }
+
+    /** @return array<string, mixed> */
+    public function buildEditor(array $input): array
+    {
+        if (isset($input['from']) || isset($input['to'])) {
+            return $this->build($input, weekly: true);
+        }
+
+        $cursor = isset($input['cursor']) ? $this->date($input['cursor']) : new \DateTimeImmutable('today', new \DateTimeZone('Europe/Kyiv'));
+        $monday = $cursor->modify('monday this week');
+        $view = $this->build(['from' => $monday->format('Y-m-d'), 'to' => $monday->modify('+6 days')->format('Y-m-d')], weekly: true);
+        $view['query'] = ['cursor' => $monday->format('Y-m-d')];
+        $view['previous'] = $monday->modify('-7 days')->format('Y-m-d');
+        $view['next'] = $monday->modify('+7 days')->format('Y-m-d');
+
+        return $view;
     }
 }

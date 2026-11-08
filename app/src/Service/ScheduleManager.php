@@ -42,9 +42,10 @@ final class ScheduleManager
     {
         if (!$groups) return [];
 
-        return $this->manager->createQueryBuilder()->select('s', 'd', 't', 'p', 'g')
+        return $this->manager->createQueryBuilder()->select('s', 'd', 't', 'p', 'g', 'topic')
             ->from(Schedule::class, 's')->join('s.discipline', 'd')->join('d.teacher', 't')
             ->join('s.pair', 'p')->join('s.group', 'g')
+            ->leftJoin('s.topic', 'topic')
             ->where('s.lessonDate BETWEEN :from AND :to')->andWhere('s.group IN (:groups)')
             ->setParameter('from', $from, 'date_immutable')->setParameter('to', $to, 'date_immutable')
             ->setParameter('groups', array_map(static fn (Group $group) => $group->getId(), $groups))

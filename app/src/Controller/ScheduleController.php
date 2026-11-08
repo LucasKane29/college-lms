@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Group;
+use App\Entity\Discipline;
 use App\Entity\Pair;
 use App\Entity\Schedule;
 use App\Form\PairType;
@@ -22,6 +23,37 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class ScheduleController extends AbstractController
 {
+    #[Route('/schedule', name: 'app_schedule', methods: ['GET'])]
+    #[IsGranted('ROLE_HEAD_TEACHER')]
+    public function index(Request $request, ScheduleCalendar $calendar, ScheduleManager $schedule, EntityManagerInterface $manager): Response
+    {
+        $input = $this->calendarQuery($request);
+        $view = $calendar->buildEditor($input);
+        $allGroups = $schedule->visibleGroups($this->getUser());
+        $group = isset($input['group']) ? ($manager->find(Group::class, $input['group']) ?? throw $this->createNotFoundException()) : null;
+        $discipline = isset($input['discipline']) ? ($manager->find(Discipline::class, $input['discipline']) ?? throw $this->createNotFoundException()) : null;
+        $groups = $group ? [$group] : $allGroups;
+        $grid = $counts = [];
+        foreach ($schedule->lessons($view['visibleFrom'], $view['visibleTo'], $groups) as $lesson) {
+            $date = $lesson->getLessonDate()->format('Y-m-d');
+            // Keep occupied slots in the grid even when another discipline is filtered out.
+            $grid[$date][$lesson->getGroup()->getId()][$lesson->getPair()->getId()] = $lesson;
+            if (!$discipline || $lesson->getDiscipline()->getId() === $discipline->getId()) {
+                $counts[$date] = ($counts[$date] ?? 0) + 1;
+            }
+        }
+        $view['query'] += array_intersect_key($input, array_flip(['group', 'discipline']));
+        $view['query']['view'] = 'schedule';
+
+        return $this->render('schedule/index.html.twig', $view + [
+            'allGroups' => $allGroups, 'groups' => $groups, 'grid' => $grid, 'counts' => $counts,
+            'selectedGroup' => $group, 'selectedDiscipline' => $discipline,
+            'disciplines' => $manager->getRepository(Discipline::class)->createQueryBuilder('d')
+                ->join('d.teacher', 'teacher')->addSelect('teacher')->orderBy('d.name', 'ASC')->addOrderBy('d.id', 'ASC')->getQuery()->getResult(),
+            'pairs' => $manager->getRepository(Pair::class)->findBy([], ['number' => 'ASC']),
+        ]);
+    }
+
     #[Route('/account', name: 'app_account', methods: ['GET'])]
     public function account(Request $request, ScheduleCalendar $calendar, ScheduleManager $schedule, EntityManagerInterface $manager): Response
     {
@@ -51,6 +83,12 @@ class ScheduleController extends AbstractController
         $existing = $lesson !== null;
         $lesson ??= (new Schedule())->setLessonDate($day)->setGroup($group)->setPair($pair);
         $query = $this->calendarQuery($request);
+        if (!$existing && isset($query['discipline'])) {
+            $selected = $manager->find(Discipline::class, $query['discipline']);
+            if ($selected && $selected->getGroups()->contains($group)) {
+                $lesson->setDiscipline($selected);
+            }
+        }
         $form = $this->createForm(ScheduleType::class, $lesson, [
             'group' => $group,
             'action' => $this->generateUrl('app_schedule_cell', ['date' => $date, 'groupId' => $groupId, 'pairId' => $pairId] + $query),
@@ -65,7 +103,7 @@ class ScheduleController extends AbstractController
                     $manager->flush();
                     $this->addFlash('success', 'Заняття збережено.');
 
-                    return $this->redirectToRoute('app_account', $query, Response::HTTP_SEE_OTHER);
+                    return $this->redirectToRoute($this->returnRoute($query), $query, Response::HTTP_SEE_OTHER);
                 } catch (UniqueConstraintViolationException) {
                     $form->addError(new FormError('Цю клітинку вже заповнено. Оновіть розклад.'));
                 }
@@ -73,7 +111,7 @@ class ScheduleController extends AbstractController
         }
 
         return $this->render('schedule/lesson_form.html.twig', [
-            'lessonForm' => $form, 'lesson' => $lesson, 'existing' => $existing, 'query' => $query,
+            'lessonForm' => $form, 'lesson' => $lesson, 'existing' => $existing, 'query' => $query, 'returnRoute' => $this->returnRoute($query),
         ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
@@ -90,7 +128,7 @@ class ScheduleController extends AbstractController
         $manager->flush();
         $this->addFlash('success', 'Заняття видалено.');
 
-        return $this->redirectToRoute('app_account', $query, Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute($this->returnRoute($query), $query, Response::HTTP_SEE_OTHER);
     }
 
     #[Route('/schedule/pairs', name: 'app_schedule_pairs', methods: ['GET'])]
@@ -137,11 +175,22 @@ class ScheduleController extends AbstractController
 
     private function calendarQuery(Request $request): array
     {
-        $query = array_intersect_key($request->query->all(), array_flip(['from', 'to', 'cursor', 'day']));
+        $query = array_intersect_key($request->query->all(), array_flip(['from', 'to', 'cursor', 'day', 'group', 'discipline', 'view']));
         foreach ($query as $value) {
             if (!is_string($value)) throw new BadRequestHttpException('Некоректний фільтр дат.');
         }
+        $query = array_filter($query, static fn (string $value): bool => '' !== $value);
+        foreach (['group', 'discipline'] as $field) {
+            if (isset($query[$field]) && !preg_match('/^[1-9][0-9]{0,9}$/D', $query[$field])) {
+                throw new BadRequestHttpException('Некоректний фільтр групи або дисципліни.');
+            }
+        }
 
         return $query;
+    }
+
+    private function returnRoute(array $query): string
+    {
+        return ($query['view'] ?? null) === 'schedule' ? 'app_schedule' : 'app_account';
     }
 }

@@ -7,7 +7,8 @@
 .schedule-toolbar, .schedule-filter, .schedule-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
 .schedule-toolbar { justify-content: space-between; }
 .schedule-filter label { display: grid; gap: 6px; font-size: 13px; color: #475569; }
-.schedule-panel input, .schedule-dialog select { min-height: 42px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; font: inherit; }
+.schedule-panel input, .schedule-panel select, .schedule-dialog select { min-height: 42px; max-width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; font: inherit; }
+.schedule-occupied { background: #f1f5f9; color: #64748b; font-size: 12px; }
 .schedule-button { display: inline-flex; justify-content: center; align-items: center; min-height: 42px; padding: 9px 16px; border: 1px solid #2563eb; border-radius: 8px; background: #2563eb; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .schedule-button:hover { background: #1d4ed8; }
 .schedule-button.secondary { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }

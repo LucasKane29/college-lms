@@ -1,0 +1,43 @@
+{% extends 'schedule/layout.html.twig' %}
+{% block title %}Розклад · College LMS{% endblock %}
+{% block workspace_content %}
+    <div class="schedule-top"><div><p class="schedule-eyebrow">Планування занять</p><h1>Розклад</h1></div></div>
+    <section class="schedule-panel" aria-label="Календар редагування розкладу">
+        <div class="schedule-toolbar">
+            <form action="{{ path('app_schedule') }}" method="get" class="schedule-filter">
+                <label>Початкова дата<input type="date" name="from" value="{{ from|date('Y-m-d') }}" required></label>
+                <label>Кінцева дата<input type="date" name="to" value="{{ to|date('Y-m-d') }}" required></label>
+                <label>Дисципліна<select name="discipline"><option value="">Усі дисципліни</option>
+                    {% for discipline in disciplines %}<option value="{{ discipline.id }}"{% if selectedDiscipline and selectedDiscipline.id == discipline.id %} selected{% endif %}>{{ discipline.name }} — {{ discipline.teacher.fullName }}</option>{% endfor %}
+                </select></label>
+                <label>Група<select name="group"><option value="">Усі групи</option>
+                    {% for group in allGroups %}<option value="{{ group.id }}"{% if selectedGroup and selectedGroup.id == group.id %} selected{% endif %}>{{ group.name }}</option>{% endfor %}
+                </select></label>
+                <button class="schedule-button" type="submit">Показати</button>
+                <a href="{{ path('app_schedule') }}">Скинути фільтри</a>
+            </form>
+            <a class="schedule-button secondary" href="{{ path('app_schedule_pairs') }}">Налаштування пар</a>
+        </div>
+        <p class="schedule-hint">За замовчуванням — поточний тиждень, понеділок–неділя. Для періоду до місяця — перегортання по тижнях, понад місяць — по місяцях. Діапазон — до 366 днів.</p>
+        <nav class="schedule-paging" aria-label="Перегортання розкладу">
+            {% if previous %}<a href="{{ path('app_schedule', query|merge({cursor: previous, day: null})) }}" rel="prev">← Попередній {{ mode == 'week' ? 'тиждень' : 'місяць' }}</a>{% else %}<span aria-disabled="true">← Назад</span>{% endif %}
+            <strong>{{ visibleFrom|date('d.m.Y') }} — {{ visibleTo|date('d.m.Y') }} · {{ mode == 'week' ? 'Тиждень' : 'Місяць' }}</strong>
+            {% if next %}<a href="{{ path('app_schedule', query|merge({cursor: next, day: null})) }}" rel="next">Наступний {{ mode == 'week' ? 'тиждень' : 'місяць' }} →</a>{% else %}<span aria-disabled="true">Далі →</span>{% endif %}
+        </nav>
+        {% if not groups %}<p class="schedule-empty">Груп ще немає.</p>{% endif %}
+        {% if not pairs %}<p class="schedule-empty">Пари ще не налаштовано. Додайте їх у налаштуваннях пар.</p>{% endif %}
+        {% if mode == 'month' %}
+            <div class="schedule-month" aria-label="Дні місяця">
+                {% for label in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'] %}<span class="schedule-weekday">{{ label }}</span>{% endfor %}
+                {% for day in days %}
+                    <a class="schedule-month-day{% if day == selected %} selected{% endif %}" style="{% if loop.first %}grid-column-start: {{ day|date('N') }}{% endif %}" href="{{ path('app_schedule', query|merge({day: day|date('Y-m-d')})) }}"{% if day == selected %} aria-current="date"{% endif %}>
+                        <strong>{{ day|date('d.m') }}</strong><span>Занять: {{ counts[day|date('Y-m-d')] ?? 0 }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <p class="schedule-hint">Натисніть порожню клітинку, щоб додати заняття, або заповнену — щоб змінити дисципліну, тему чи видалити заняття. Клітинки інших дисциплін позначено як зайняті.</p>
+        {% if groups and pairs %}{% for day in tableDays %}{% include 'schedule/_day.html.twig' %}{% endfor %}{% endif %}
+    </section>
+    <turbo-frame id="schedule-modal"></turbo-frame>
+{% endblock %}

@@ -76,6 +76,65 @@ class ScheduleTest extends WebTestCase
         self::assertResponseStatusCodeSame(303);
     }
 
+    public function testEditorDefaultsToWeekAndFiltersArePreservedWhileEditing(): void
+    {
+        $this->client->request('GET', '/schedule');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Розклад');
+        self::assertSelectorCount(7, '.schedule-day');
+        self::assertSelectorExists('.schedule-paging a[rel="prev"]');
+        self::assertSelectorExists('.schedule-paging a[rel="next"]');
+
+        $query = '?from=2026-10-19&to=2026-11-01&group='.$this->groupId.'&discipline='.$this->disciplineId.'&view=schedule';
+        $this->client->request('GET', '/schedule'.$query);
+        self::assertSelectorCount(7, '.schedule-day');
+        self::assertSelectorCount(7, '.schedule-table tbody tr');
+        self::assertSelectorNotExists('.schedule-paging a[rel="prev"]');
+        $this->client->clickLink('Наступний тиждень →');
+        self::assertSelectorTextContains('.schedule-paging', '26.10.2026 — 01.11.2026');
+        self::assertSelectorExists('select[name="group"] option[value="'.$this->groupId.'"][selected]');
+        self::assertSelectorExists('select[name="discipline"] option[value="'.$this->disciplineId.'"][selected]');
+
+        $this->client->request('GET', $this->cell().$query);
+        self::assertSelectorExists('select[name="schedule[discipline]"] option[value="'.$this->disciplineId.'"][selected]');
+        $this->client->submitForm('Зберегти заняття');
+        self::assertResponseRedirects('/schedule'.$query, 303);
+        $this->client->followRedirect();
+        self::assertSelectorCount(1, '.schedule-cell.filled');
+        self::assertSelectorTextContains('.schedule-cell.filled', 'Математика');
+        $this->client->request('GET', $this->cell().$query);
+        $this->client->submitForm('Видалити заняття');
+        self::assertResponseRedirects('/schedule'.$query, 303);
+    }
+
+    public function testDisciplineFilterDoesNotExposeOccupiedSlotsAsFree(): void
+    {
+        $this->createLesson();
+        $this->client->request('GET', '/schedule?from=2026-10-24&to=2026-10-24&discipline='.$this->otherDisciplineId.'&group='.$this->groupId);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(1, '.schedule-occupied');
+        self::assertSelectorNotExists('a.schedule-cell');
+        self::assertSelectorTextNotContains('.schedule-table', 'Математика');
+    }
+
+    public function testEditorPermissionsAndInvalidFilters(): void
+    {
+        foreach (['from[]=2026-10-01', 'group[]=1', 'discipline=-1', 'group=abc', 'from=2026-02-30', 'from=2026-10-25&to=2026-10-24'] as $query) {
+            $this->client->request('GET', '/schedule?'.$query);
+            self::assertResponseStatusCodeSame(400);
+        }
+        $this->client->request('GET', '/schedule?group=999999');
+        self::assertResponseStatusCodeSame(404);
+        $this->client->loginUser($this->user('editor-admin@example.com', UserRole::Admin));
+        $this->client->request('GET', '/schedule');
+        self::assertResponseIsSuccessful();
+        foreach ([UserRole::Teacher, UserRole::Student, UserRole::Curator, UserRole::Director, UserRole::User] as $role) {
+            $this->client->loginUser($this->user('editor-'.$role->name.'@example.com', $role));
+            $this->client->request('GET', '/schedule');
+            self::assertResponseStatusCodeSame(403);
+        }
+    }
+
     public function testLessonTopicMustBelongToSelectedDiscipline(): void
     {
         $topic = (new LessonTopic())->setName('Похідна')->setDiscipline($this->manager()->find(Discipline::class, $this->disciplineId));

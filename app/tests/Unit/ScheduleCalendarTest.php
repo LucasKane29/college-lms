@@ -10,6 +10,33 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class ScheduleCalendarTest extends TestCase
 {
+    public function testEditorDefaultsToFullWeekWithNavigation(): void
+    {
+        $calendar = new ScheduleCalendar();
+        $view = $calendar->buildEditor([]);
+        self::assertSame('week', $view['mode']);
+        self::assertCount(7, $view['tableDays']);
+        self::assertSame('1', $view['visibleFrom']->format('N'));
+        self::assertSame('7', $view['visibleTo']->format('N'));
+        self::assertArrayNotHasKey('from', $view['query']);
+        $next = $calendar->buildEditor(['cursor' => $view['next']]);
+        self::assertSame($view['visibleFrom']->modify('+7 days')->format('Y-m-d'), $next['visibleFrom']->format('Y-m-d'));
+        self::assertSame($view['visibleFrom']->format('Y-m-d'), $next['previous']);
+    }
+
+    public function testEditorUsesWeeklyPagesEvenForShortRanges(): void
+    {
+        $calendar = new ScheduleCalendar();
+        $view = $calendar->buildEditor(['from' => '2026-10-20', 'to' => '2026-10-26']);
+        self::assertSame('week', $view['mode']);
+        self::assertCount(6, $view['tableDays']);
+        self::assertNull($view['previous']);
+        self::assertSame('2026-10-26', $view['next']);
+        $last = $calendar->buildEditor(['from' => '2026-10-20', 'to' => '2026-10-26', 'cursor' => $view['next']]);
+        self::assertCount(1, $last['tableDays']);
+        self::assertNull($last['next']);
+        self::assertSame('2026-10-25', $last['previous']);
+    }
     public static function ranges(): iterable
     {
         yield 'seven days' => ['2026-10-20', '2026-10-26', 'day', 1];
