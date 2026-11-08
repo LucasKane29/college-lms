@@ -30,7 +30,7 @@ class LessonQuiz
     private int $maxAttempts = 1;
     #[ORM\Column]
     private int $revision = 1;
-    #[ORM\Version, ORM\Column(type: 'integer')]
+    #[ORM\Version, ORM\Column(type: 'integer', options: ['default' => 1])]
     private int $lockVersion = 1;
     /** @var Collection<int, QuizQuestion> */
     #[ORM\OneToMany(mappedBy: 'quiz', targetEntity: QuizQuestion::class, cascade: ['persist'], orphanRemoval: true)]
