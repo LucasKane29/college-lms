@@ -3,16 +3,16 @@
 {% block admin_content %}
     <h1>Мої викладачі</h1>
     {% if group %}
-        <p class="admin-description">Викладачі дисциплін вашої групи · Усього: {{ total }}</p>
-        <div class="admin-table-scroll">
-            <table class="admin-table">
+        <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Викладачі дисциплін вашої групи · Усього: {{ total }}</p>
+        <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+            <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
                 <thead><tr><th scope="col">Ім’я та прізвище</th></tr></thead>
                 <tbody>
                     {% for teacher in teachers %}<tr data-teacher-id="{{ teacher.id }}"><td>{{ teacher.fullName }}</td></tr>
-                    {% else %}<tr><td class="admin-empty">За вашою групою ще не закріплено дисциплін із викладачами.</td></tr>{% endfor %}
+                    {% else %}<tr><td data-ui="admin-empty" class="px-4! py-12! text-center text-slate-500">За вашою групою ще не закріплено дисциплін із викладачами.</td></tr>{% endfor %}
                 </tbody>
             </table>
         </div>
         {% include 'curator/_pagination.html.twig' with {route: 'app_student_teachers'} %}
-    {% else %}<p class="admin-description">Вас ще не додано до групи. Зверніться до куратора.</p>{% endif %}
+    {% else %}<p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Вас ще не додано до групи. Зверніться до куратора.</p>{% endif %}
 {% endblock %}

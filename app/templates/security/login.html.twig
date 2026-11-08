@@ -12,19 +12,19 @@
 
     <form action="{{ path('app_login') }}" method="post" class="mt-8 space-y-5" data-turbo="true">
         <div class="space-y-2">
-            <label for="login-email" class="field-label">Електронна пошта</label>
-            <input id="login-email" type="email" name="email" value="{{ last_username }}" autocomplete="username" placeholder="name@example.com" maxlength="180" required class="auth-input" {% if error %}aria-invalid="true" aria-describedby="login-error"{% endif %}>
+            <label for="login-email" data-ui="field-label" class="block text-sm font-semibold text-slate-700">Електронна пошта</label>
+            <input id="login-email" type="email" name="email" value="{{ last_username }}" autocomplete="username" placeholder="name@example.com" maxlength="180" required data-ui="auth-input" class="block w-full min-w-0 min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-xs outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 aria-invalid:border-red-500 disabled:cursor-not-allowed disabled:bg-slate-100 rounded-xl px-4 py-3 placeholder:text-slate-400 aria-invalid:focus:ring-red-500/10" {% if error %}aria-invalid="true" aria-describedby="login-error"{% endif %}>
         </div>
         <div class="space-y-2" data-controller="password-visibility">
-            <label for="login-password" class="field-label">Пароль</label>
+            <label for="login-password" data-ui="field-label" class="block text-sm font-semibold text-slate-700">Пароль</label>
             <div class="relative">
-                <input id="login-password" type="password" name="password" autocomplete="current-password" required class="auth-input pr-12" data-password-visibility-target="input" {% if error %}aria-invalid="true" aria-describedby="login-error"{% endif %}>
+                <input id="login-password" type="password" name="password" autocomplete="current-password" required data-ui="auth-input pr-12" class="block w-full min-w-0 min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-xs outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 aria-invalid:border-red-500 disabled:cursor-not-allowed disabled:bg-slate-100 rounded-xl px-4 py-3 placeholder:text-slate-400 aria-invalid:focus:ring-red-500/10 pr-12" data-password-visibility-target="input" {% if error %}aria-invalid="true" aria-describedby="login-error"{% endif %}>
                 {% include 'security/_password_toggle.html.twig' with {input_id: 'login-password'} %}
             </div>
         </div>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token('login') }}">
-        <button type="submit" class="primary-button" data-turbo-submits-with="Входимо…">Увійти <span aria-hidden="true">→</span></button>
+        <button type="submit" data-ui="primary-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 w-full gap-2 rounded-xl py-3.5 shadow-sm" data-turbo-submits-with="Входимо…">Увійти <span aria-hidden="true">→</span></button>
     </form>
 
-    <p class="mt-8 text-center text-sm text-slate-500">Ще немає облікового запису? <a href="{{ path('app_registration') }}" class="text-link">Зареєструватися</a></p>
+    <p class="mt-8 text-center text-sm text-slate-500">Ще немає облікового запису? <a href="{{ path('app_registration') }}" data-ui="text-link" class="font-semibold text-blue-600 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600">Зареєструватися</a></p>
 {% endblock %}

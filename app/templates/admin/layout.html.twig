@@ -1,10 +1,6 @@
 {% extends 'layouts/authenticated.html.twig' %}
-{% block stylesheets %}
-    {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/admin.css') }}">
-{% endblock %}
 {% block workspace_content %}
-    <div class="admin-main admin-workspace">
+    <div data-ui="admin-main admin-workspace" class="mx-auto max-w-[1440px] [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:text-lg [&_h2]:font-semibold [&_a:not([data-ui~=admin-button])]:text-blue-600 [&_a]:underline-offset-4 [&_a:hover]:underline [&_turbo-frame]:block ">
         {% block admin_content %}{% endblock %}
     </div>
 {% endblock %}

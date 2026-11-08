@@ -16,8 +16,8 @@
         {% include 'security/_field.html.twig' with {field: registrationForm.birthDate} %}
         {% include 'security/_field.html.twig' with {field: registrationForm.plainPassword.first} %}
         {% include 'security/_field.html.twig' with {field: registrationForm.plainPassword.second} %}
-        <button type="submit" class="primary-button" data-turbo-submits-with="Створюємо акаунт…">Створити акаунт <span aria-hidden="true">→</span></button>
+        <button type="submit" data-ui="primary-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 w-full gap-2 rounded-xl py-3.5 shadow-sm" data-turbo-submits-with="Створюємо акаунт…">Створити акаунт <span aria-hidden="true">→</span></button>
     {{ form_end(registrationForm) }}
 
-    <p class="mt-8 text-center text-sm text-slate-500">Уже маєте обліковий запис? <a href="{{ path('app_login') }}" class="text-link">Увійти</a></p>
+    <p class="mt-8 text-center text-sm text-slate-500">Уже маєте обліковий запис? <a href="{{ path('app_login') }}" data-ui="text-link" class="font-semibold text-blue-600 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600">Увійти</a></p>
 {% endblock %}

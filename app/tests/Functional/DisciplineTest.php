@@ -141,7 +141,7 @@ class DisciplineTest extends WebTestCase
         $this->client->loginUser($this->user('admin@example.com', UserRole::Admin));
         $this->client->request('GET', $url);
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.admin-empty', 'У групі ще немає студентів.');
+        self::assertSelectorTextContains('[data-ui~="admin-empty"]', 'У групі ще немає студентів.');
     }
 
     public function testStudentListIsPaginatedAndRestrictedToSelectedGroup(): void

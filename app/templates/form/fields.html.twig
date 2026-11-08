@@ -1,7 +1,48 @@
-{% use 'form_div_layout.html.twig' %}
+{% use 'form_div_layout.html.twig' with widget_attributes as base_widget_attributes, form_label as base_form_label, form_row as base_form_row, form_errors as base_form_errors, form_help as base_form_help %}
+
+{% block widget_attributes %}
+    {% set checkable = 'checkbox' in block_prefixes or 'radio' in block_prefixes %}
+    {% set control_class = checkable
+        ? 'size-5 shrink-0 rounded border-slate-300 align-middle accent-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+        : 'block w-full min-w-0 min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-xs outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 aria-invalid:border-red-500 disabled:cursor-not-allowed disabled:bg-slate-100' %}
+    {% set attr = attr|merge({class: (control_class ~ ' ' ~ attr.class|default(''))|trim}) %}
+    {% if errors|length %}{% set attr = attr|merge({'aria-invalid': 'true', 'aria-describedby': (attr['aria-describedby']|default('') ~ ' ' ~ id ~ '_errors')|trim}) %}{% endif %}
+    {{ block('base_widget_attributes') }}
+{% endblock %}
+
+{% block form_label %}
+    {% set checkable = 'checkbox' in block_prefixes or 'radio' in block_prefixes %}
+    {% set label_attr = label_attr|merge({class: ((checkable ? 'inline' : 'block') ~ ' text-sm font-semibold text-slate-700 ' ~ label_attr.class|default(''))|trim}) %}
+    {{ block('base_form_label') }}
+{% endblock %}
+
+{% block form_row %}
+    {% set row_attr = row_attr|merge({class: ('mb-4 space-y-1.5 ' ~ row_attr.class|default(''))|trim}) %}
+    {{ block('base_form_row') }}
+{% endblock %}
+
+{% block checkbox_row %}
+    <div class="mb-4 flex flex-wrap items-center gap-2">{{ form_widget(form) }}{{ form_label(form) }}{{ form_errors(form) }}</div>
+{% endblock %}
+
+{% block choice_widget_expanded %}
+    {% set attr = attr|merge({class: ('space-y-2 ' ~ attr.class|default(''))|trim}) %}
+    <div {{ block('widget_container_attributes') }}>
+        {% for child in form %}<div class="flex items-center gap-2">{{ form_widget(child) }}{{ form_label(child, null, {translation_domain: choice_translation_domain}) }}</div>{% endfor %}
+    </div>
+{% endblock %}
+
+{% block form_errors %}
+    {% if errors|length %}<div id="{{ id }}_errors" class="mt-1 text-sm text-red-700" role="alert">{{ block('base_form_errors') }}</div>{% endif %}
+{% endblock %}
+
+{% block form_help %}
+    {% set help_attr = help_attr|merge({class: ('mt-1 text-xs leading-5 text-slate-500 ' ~ help_attr.class|default(''))|trim}) %}
+    {{ block('base_form_help') }}
+{% endblock %}
 
 {% block localized_date_widget %}
-    <div class="datepicker-field" data-controller="datepicker">
+    <div data-ui="datepicker-field" class="block w-full" data-controller="datepicker">
         {{ block('date_widget') }}
     </div>
 {% endblock %}

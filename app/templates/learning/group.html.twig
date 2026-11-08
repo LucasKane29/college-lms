@@ -3,13 +3,13 @@
 {% block admin_content %}
     <h1>Моя група</h1>
     {% if group %}
-        <p class="admin-description">{{ group.name }} · Куратор: {{ group.curator.fullName }}</p>
-        <div class="admin-table-scroll">
-            <table class="admin-table">
+        <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">{{ group.name }} · Куратор: {{ group.curator.fullName }}</p>
+        <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+            <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
                 <thead><tr><th scope="col">Студенти групи</th></tr></thead>
                 <tbody>{% for student in users %}<tr><td>{{ student.fullName }}</td></tr>{% endfor %}</tbody>
             </table>
         </div>
         {% include 'curator/_pagination.html.twig' with {route: 'app_student_group'} %}
-    {% else %}<p class="admin-description">Вас ще не додано до групи. Зверніться до куратора.</p>{% endif %}
+    {% else %}<p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Вас ще не додано до групи. Зверніться до куратора.</p>{% endif %}
 {% endblock %}

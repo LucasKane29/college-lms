@@ -2,13 +2,13 @@
 {% block title %}Мої групи · College LMS{% endblock %}
 {% block admin_content %}
     <h1>{{ is_granted('ROLE_ADMIN') ? 'Усі групи' : 'Мої групи' }}</h1>
-    <p class="admin-description">{{ is_granted('ROLE_ADMIN') ? 'Перелік усіх груп.' : 'Групи, за якими закріплено ваші дисципліни.' }} Груп: {{ total }}</p>
-    <div class="admin-table-scroll">
-        <table class="admin-table">
+    <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">{{ is_granted('ROLE_ADMIN') ? 'Перелік усіх груп.' : 'Групи, за якими закріплено ваші дисципліни.' }} Груп: {{ total }}</p>
+    <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
             <thead><tr><th scope="col">Група</th><th scope="col">Куратор</th></tr></thead>
             <tbody>
                 {% for group in groups %}<tr data-group-id="{{ group.id }}"><td><a href="{{ path('app_teacher_group_show', {id: group.id}) }}">{{ group.name }}</a></td><td>{{ group.curator.fullName }}</td></tr>
-                {% else %}<tr><td colspan="2" class="admin-empty">За вашими дисциплінами ще не закріплено груп.</td></tr>{% endfor %}
+                {% else %}<tr><td colspan="2" data-ui="admin-empty" class="px-4! py-12! text-center text-slate-500">За вашими дисциплінами ще не закріплено груп.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>

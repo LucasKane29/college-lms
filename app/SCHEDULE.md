@@ -49,6 +49,6 @@ docker compose exec -T app php bin/console doctrine:migrations:migrate --no-inte
 docker compose exec -T app php bin/console cache:clear
 ```
 
-Для production після оновлення ассетів також потрібен `php bin/console asset-map:compile`. Нові стилі розкладу підключені окремим CSS-файлом; збірка Tailwind для них не потрібна.
+Усі сторінки розкладу оформлені утилітами Tailwind CSS зі спільною збіркою `assets/styles/app.css`. Після зміни класів у шаблонах виконайте `npm run build:css` із `app/`. Для production після збирання стилів також потрібен `php bin/console asset-map:compile`.
 
 Відкат створення таблиць видаляє розклад і налаштування пар. Для окремого відкату початкових даних міграція видаляє лише незмінені пари без занять.

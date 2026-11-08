@@ -3,18 +3,18 @@
 {% block admin_content %}
     <a href="{{ path('app_teacher_disciplines') }}">← Дисципліни</a>
     <h1>{{ discipline.name }}</h1>
-    <p class="admin-description">Викладач: {{ discipline.teacher.fullName }} · Створено {{ discipline.createdAt|date('d.m.Y') }}</p>
-    {% if discipline.description %}<p class="discipline-description">{{ discipline.description }}</p>{% endif %}
-    {% if is_granted('DISCIPLINE_MANAGE', discipline) %}<p class="admin-description"><a href="{{ path('app_teacher_discipline_edit', {id: discipline.id}) }}">Редагувати дисципліну та групи</a></p>{% endif %}
+    <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Викладач: {{ discipline.teacher.fullName }} · Створено {{ discipline.createdAt|date('d.m.Y') }}</p>
+    {% if discipline.description %}<p data-ui="discipline-description" class="mb-4 whitespace-pre-wrap wrap-anywhere">{{ discipline.description }}</p>{% endif %}
+    {% if is_granted('DISCIPLINE_MANAGE', discipline) %}<p data-ui="admin-description" class="mt-2 mb-6 text-slate-500"><a href="{{ path('app_teacher_discipline_edit', {id: discipline.id}) }}">Редагувати дисципліну та групи</a></p>{% endif %}
     <h2>Закріплені групи</h2>
-    <ul class="discipline-group-list">
+    <ul data-ui="discipline-group-list" class="mt-4 list-inside list-disc [&_li]:py-2">
         {% for group in discipline.groups %}<li data-group-id="{{ group.id }}">{{ group.name }}</li>{% else %}<li>Дисципліну ще не закріплено за групами.</li>{% endfor %}
     </ul>
     <h2>Розклад дисципліни</h2>
-    <p class="admin-description">Занять: {{ total }}. Розклад для всіх пов’язаних груп за днями.</p>
+    <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Занять: {{ total }}. Розклад для всіх пов’язаних груп за днями.</p>
     {% set weekdays = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя'] %}
-    <div class="admin-table-scroll" role="region" aria-label="Розклад дисципліни" tabindex="0">
-        <table class="admin-table">
+    <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white" role="region" aria-label="Розклад дисципліни" tabindex="0">
+        <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
             <thead><tr><th scope="col">Дата</th><th scope="col">День тижня</th><th scope="col">Група</th><th scope="col">Пара</th><th scope="col">Час</th><th scope="col">Тема заняття</th></tr></thead>
             <tbody>
                 {% for lesson in lessons %}
@@ -25,7 +25,7 @@
                         <td>{{ lesson.pair.startOn(lesson.lessonDate)|date('H:i') }}–{{ lesson.pair.endOn(lesson.lessonDate)|date('H:i') }}</td>
                         <td>{{ lesson.topic ? lesson.topic.name : 'Тему ще не обрано' }}</td>
                     </tr>
-                {% else %}<tr><td colspan="6" class="admin-empty">Для пов’язаних груп ще немає занять із цієї дисципліни.</td></tr>{% endfor %}
+                {% else %}<tr><td colspan="6" data-ui="admin-empty" class="px-4! py-12! text-center text-slate-500">Для пов’язаних груп ще немає занять із цієї дисципліни.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -37,7 +37,7 @@
     {% if topicForm %}
         {{ form_start(topicForm) }}
             {{ form_row(topicForm.name) }}
-            <button class="admin-button" type="submit">Додати тему</button>
+            <button data-ui="admin-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">Додати тему</button>
         {{ form_end(topicForm) }}
     {% endif %}
 {% endblock %}

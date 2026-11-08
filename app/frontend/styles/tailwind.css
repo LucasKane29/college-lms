@@ -1,4 +1,6 @@
 @import "tailwindcss" source(none);
+/* Flatpickr owns its generated markup; keep its layout in the component layer. */
+@import "../../assets/lib/flatpickr/flatpickr.min.css" layer(components);
 @source "../../templates";
 @source "../../assets/controllers";
 
@@ -12,19 +14,21 @@
     button:not(:disabled) { @apply cursor-pointer; }
 }
 
+/* Adapter for elements created by the third-party date picker. */
 @layer components {
-    .auth-input {
-        @apply block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 shadow-xs outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 aria-invalid:border-red-500 aria-invalid:focus:ring-red-500/10;
+    .flatpickr-wrapper { @apply block w-full; }
+    .flatpickr-calendar { @apply font-sans; }
+    .flatpickr-calendar .flatpickr-monthDropdown-months { @apply w-auto min-h-0 rounded-none border-0 font-sans; }
+    .flatpickr-calendar .flatpickr-current-month input.cur-year { @apply min-h-0 rounded-none border-0 py-0 pr-0 pl-1; }
+    .flatpickr-day.selected, .flatpickr-day.selected:hover { @apply border-blue-600 bg-blue-600; }
+    .flatpickr-calendar :focus-visible { @apply outline-2 outline-offset-2 outline-blue-600; }
+    @media (width <= 540px) {
+        .flatpickr-calendar.static { @apply max-w-full; }
+        .flatpickr-calendar .flatpickr-days, .flatpickr-calendar .dayContainer { @apply w-full min-w-0 max-w-full; }
     }
-    .field-label { @apply block text-sm font-semibold text-slate-700; }
-    .primary-button {
-        @apply inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 disabled:cursor-wait disabled:opacity-60;
-    }
-    .text-link { @apply font-semibold text-blue-600 underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600; }
+    .turbo-progress-bar { @apply h-[3px] bg-blue-600; }
 }
 
-.turbo-progress-bar { background: #2563eb; height: 3px; }
-
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    *, *::before, *::after { @apply scroll-auto! duration-0!; }
 }

@@ -2,10 +2,10 @@
 {% block title %}Дисципліни · College LMS{% endblock %}
 {% block admin_content %}
     <h1>{{ is_granted('ROLE_HEAD_TEACHER') ? 'Усі дисципліни' : 'Мої дисципліни' }}</h1>
-    <p class="admin-description">Дисциплін: {{ total }}</p>
-    {% if is_granted('ROLE_TEACHER') %}<p class="admin-description"><a class="admin-button" href="{{ path('app_teacher_discipline_new') }}">Створити дисципліну</a></p>{% endif %}
-    <div class="admin-table-scroll" role="region" aria-label="Список дисциплін" tabindex="0">
-        <table class="admin-table">
+    <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Дисциплін: {{ total }}</p>
+    {% if is_granted('ROLE_TEACHER') %}<p data-ui="admin-description" class="mt-2 mb-6 text-slate-500"><a data-ui="admin-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" href="{{ path('app_teacher_discipline_new') }}">Створити дисципліну</a></p>{% endif %}
+    <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white" role="region" aria-label="Список дисциплін" tabindex="0">
+        <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
             <thead><tr><th scope="col">Дисципліна</th><th scope="col">Викладач</th><th scope="col">Групи</th><th scope="col">Дії</th></tr></thead>
             <tbody>
                 {% for discipline in disciplines %}
@@ -15,7 +15,7 @@
                         <td>{% for group in discipline.groups %}{{ group.name }}{% if not loop.last %}, {% endif %}{% else %}Не закріплено{% endfor %}</td>
                         <td>{% if is_granted('DISCIPLINE_MANAGE', discipline) %}<a href="{{ path('app_teacher_discipline_edit', {id: discipline.id}) }}">Редагувати<span class="sr-only">: {{ discipline.name }}</span></a>{% else %}—{% endif %}</td>
                     </tr>
-                {% else %}<tr><td colspan="4" class="admin-empty">Дисциплін ще немає. Створіть першу дисципліну.</td></tr>{% endfor %}
+                {% else %}<tr><td colspan="4" data-ui="admin-empty" class="px-4! py-12! text-center text-slate-500">Дисциплін ще немає. Створіть першу дисципліну.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>

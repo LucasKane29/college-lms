@@ -1,15 +1,15 @@
 {% extends 'admin/layout.html.twig' %}
 {% block title %}Додавання студента · College LMS{% endblock %}
 {% block admin_content %}
-    <div class="workspace-card">
+    <div data-ui="workspace-card" class="max-w-[640px] rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 [&_h1]:text-[28px] [&_h1]:font-semibold [&_h1]:tracking-tight [&_p]:mt-4 [&_p]:leading-relaxed [&_p]:text-slate-500 [&_p]:wrap-anywhere">
         <a href="{{ path('app_curator_students') }}">← Студенти</a>
         <h1>Додати студента до групи</h1>
         <p>{{ student.fullName }} · {{ student.email }}</p>
         {% if student.studentGroup %}<p>Поточна група: {{ student.studentGroup.name }}. Студент може належати лише до однієї групи.</p>{% endif %}
         {{ form_start(assignmentForm) }}
             {{ form_errors(assignmentForm) }}
-            <div class="admin-field">{{ form_row(assignmentForm.group) }}</div>
-            <button class="admin-button" type="submit">Додати до групи</button>
+            <div data-ui="admin-field" class="mb-3">{{ form_row(assignmentForm.group) }}</div>
+            <button data-ui="admin-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">Додати до групи</button>
         {{ form_end(assignmentForm) }}
         <p>Немає потрібної групи? <a href="{{ path('app_curator_group_new') }}">Створити групу</a>.</p>
     </div>

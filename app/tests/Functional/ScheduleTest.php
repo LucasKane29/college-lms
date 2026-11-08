@@ -82,17 +82,17 @@ class ScheduleTest extends WebTestCase
         $this->client->request('GET', '/schedule');
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Розклад');
-        self::assertSelectorCount(7, '.schedule-day');
-        self::assertSelectorExists('.schedule-paging a[rel="prev"]');
-        self::assertSelectorExists('.schedule-paging a[rel="next"]');
+        self::assertSelectorCount(7, '[data-ui~="schedule-day"]');
+        self::assertSelectorExists('[data-ui~="schedule-paging"] a[rel="prev"]');
+        self::assertSelectorExists('[data-ui~="schedule-paging"] a[rel="next"]');
 
         $query = '?from=2026-10-19&to=2026-11-01&group='.$this->groupId.'&discipline='.$this->disciplineId.'&view=schedule';
         $this->client->request('GET', '/schedule'.$query);
-        self::assertSelectorCount(7, '.schedule-day');
-        self::assertSelectorCount(7, '.schedule-table tbody tr');
-        self::assertSelectorNotExists('.schedule-paging a[rel="prev"]');
+        self::assertSelectorCount(7, '[data-ui~="schedule-day"]');
+        self::assertSelectorCount(7, '[data-ui~="schedule-table"] tbody tr');
+        self::assertSelectorNotExists('[data-ui~="schedule-paging"] a[rel="prev"]');
         $this->client->clickLink('Наступний тиждень →');
-        self::assertSelectorTextContains('.schedule-paging', '26.10.2026 — 01.11.2026');
+        self::assertSelectorTextContains('[data-ui~="schedule-paging"]', '26.10.2026 — 01.11.2026');
         self::assertSelectorExists('select[name="group"] option[value="'.$this->groupId.'"][selected]');
         self::assertSelectorExists('select[name="discipline"] option[value="'.$this->disciplineId.'"][selected]');
 
@@ -101,8 +101,8 @@ class ScheduleTest extends WebTestCase
         $this->client->submitForm('Зберегти заняття');
         self::assertResponseRedirects('/schedule'.$query, 303);
         $this->client->followRedirect();
-        self::assertSelectorCount(1, '.schedule-cell.filled');
-        self::assertSelectorTextContains('.schedule-cell.filled', 'Математика');
+        self::assertSelectorCount(1, '[data-ui~="schedule-cell"][data-ui~="filled"]');
+        self::assertSelectorTextContains('[data-ui~="schedule-cell"][data-ui~="filled"]', 'Математика');
         $this->client->request('GET', $this->cell().$query);
         $this->client->submitForm('Видалити заняття');
         self::assertResponseRedirects('/schedule'.$query, 303);
@@ -113,9 +113,9 @@ class ScheduleTest extends WebTestCase
         $this->createLesson();
         $this->client->request('GET', '/schedule?from=2026-10-24&to=2026-10-24&discipline='.$this->otherDisciplineId.'&group='.$this->groupId);
         self::assertResponseIsSuccessful();
-        self::assertSelectorCount(1, '.schedule-occupied');
-        self::assertSelectorNotExists('a.schedule-cell');
-        self::assertSelectorTextNotContains('.schedule-table', 'Математика');
+        self::assertSelectorCount(1, '[data-ui~="schedule-occupied"]');
+        self::assertSelectorNotExists('a[data-ui~="schedule-cell"]');
+        self::assertSelectorTextNotContains('[data-ui~="schedule-table"]', 'Математика');
     }
 
     public function testEditorPermissionsAndInvalidFilters(): void
@@ -150,7 +150,7 @@ class ScheduleTest extends WebTestCase
         $this->client->loginUser($this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']));
         $this->client->request('GET', '/schedule/'.$lessonId.'/topic');
         self::assertSelectorNotExists('select[name="schedule[discipline]"]');
-        self::assertSelectorNotExists('button.schedule-delete');
+        self::assertSelectorNotExists('button[data-ui~="schedule-delete"]');
         self::assertSelectorNotExists('select[name="schedule_topic[topic]"] option[value="'.$otherId.'"]');
         $token = $this->client->getCrawler()->filter('input[name="schedule_topic[_token]"]')->attr('value');
         $this->client->request('POST', '/schedule/'.$lessonId.'/topic', ['schedule_topic' => ['topic' => $otherId, '_token' => $token]]);
@@ -173,7 +173,7 @@ class ScheduleTest extends WebTestCase
             foreach (['/schedule', '/account'] as $url) {
                 $this->client->request('GET', $url.'?from=2026-10-24&to=2026-10-24');
                 self::assertResponseIsSuccessful();
-                self::assertSelectorTextContains('.schedule-cell.filled', 'Похідна');
+                self::assertSelectorTextContains('[data-ui~="schedule-cell"][data-ui~="filled"]', 'Похідна');
             }
         }
     }
@@ -273,7 +273,7 @@ class ScheduleTest extends WebTestCase
         $this->client->request('GET', '/schedule?from=2026-10-24&to=2026-10-24');
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('main', 'Стороння дисципліна');
-        self::assertSelectorNotExists('a.schedule-cell');
+        self::assertSelectorNotExists('a[data-ui~="schedule-cell"]');
         self::assertSelectorNotExists('a[href*="/schedule/pairs"]');
     }
 
@@ -321,7 +321,7 @@ class ScheduleTest extends WebTestCase
         $query = '?from=2026-10-24&to=2026-10-30';
         $this->client->request('GET', '/account'.$query);
         self::assertResponseIsSuccessful();
-        self::assertSelectorCount(2, '.schedule-cell');
+        self::assertSelectorCount(2, '[data-ui~="schedule-cell"]');
         self::assertSelectorTextContains('thead', '09:00–11:00');
         $this->client->request('GET', $this->cell().$query, server: ['HTTP_TURBO_FRAME' => 'schedule-modal']);
         self::assertSelectorExists('turbo-frame#schedule-modal dialog');
@@ -329,12 +329,12 @@ class ScheduleTest extends WebTestCase
         $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->disciplineId]);
         self::assertResponseRedirects('/account'.$query, 303);
         $this->client->followRedirect();
-        self::assertSelectorTextContains('.schedule-cell.filled', 'Математика');
+        self::assertSelectorTextContains('[data-ui~="schedule-cell"][data-ui~="filled"]', 'Математика');
         $this->client->request('GET', $this->cell().$query);
         $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->otherDisciplineId]);
         self::assertResponseStatusCodeSame(303);
         $this->client->request('GET', $this->cell().$query);
-        self::assertSelectorExists('button.schedule-delete');
+        self::assertSelectorExists('button[data-ui~="schedule-delete"]');
         $this->client->submitForm('Видалити заняття');
         self::assertResponseStatusCodeSame(303);
         self::assertSame(0, $this->manager()->getRepository(Schedule::class)->count([]));
@@ -396,7 +396,7 @@ class ScheduleTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('tbody', 'КН-21');
         self::assertSelectorTextNotContains('tbody', 'КН-22');
-        self::assertSelectorNotExists('a.schedule-cell');
+        self::assertSelectorNotExists('a[data-ui~="schedule-cell"]');
     }
 
     public function testAdminCanManagePairsAndSchedule(): void
@@ -480,10 +480,10 @@ class ScheduleTest extends WebTestCase
         foreach (['2026-10-26' => 'День', '2026-11-05' => 'Тиждень', '2026-12-05' => 'Місяць'] as $to => $label) {
             $this->client->request('GET', '/account', ['from' => '2026-10-20', 'to' => $to]);
             self::assertResponseIsSuccessful();
-            self::assertSelectorTextContains('.schedule-paging', $label);
+            self::assertSelectorTextContains('[data-ui~="schedule-paging"]', $label);
         }
-        self::assertSelectorExists('.schedule-month');
-        self::assertSelectorCount(1, '.schedule-day');
+        self::assertSelectorExists('[data-ui~="schedule-month"]');
+        self::assertSelectorCount(1, '[data-ui~="schedule-day"]');
         $this->client->request('GET', '/account?from=2026-02-30');
         self::assertResponseStatusCodeSame(400);
         $this->client->request('GET', '/account', ['from' => ['bad']]);

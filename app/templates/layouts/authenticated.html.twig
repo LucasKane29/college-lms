@@ -1,8 +1,4 @@
 {% extends 'base.html.twig' %}
-{% block stylesheets %}
-    {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/navigation.css') }}">
-{% endblock %}
 {% block body %}
     {% set roleMenus = {
         ROLE_STUDENT: [
@@ -36,41 +32,41 @@
     } %}
     {% set menu = [{label: 'Мій кабінет', route: 'app_account', icon: 'home'}]|merge(roleMenus[app.user.role.value] ?? []) %}
     {% set currentRoute = app.request.attributes.get('_route') %}
-    <a href="#main-content" class="workspace-skip">Перейти до вмісту</a>
-    <div class="workspace" data-controller="sidebar">
-        <nav id="workspace-navigation" class="workspace-navigation" aria-label="Головне меню">
-            <div class="workspace-navigation-header">
-                <button type="button" class="workspace-toggle" data-action="sidebar#toggle" data-sidebar-target="toggle" aria-controls="workspace-menu" aria-expanded="true" aria-label="Згорнути меню" title="Згорнути меню">
+    <a href="#main-content" data-ui="workspace-skip" class="sr-only text-blue-600 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-white focus:p-3">Перейти до вмісту</a>
+    <div data-ui="workspace" class="group/sidebar grid min-h-screen grid-cols-[76px_minmax(0,1fr)] transition-[grid-template-columns] duration-200 min-[701px]:grid-cols-[264px_minmax(0,1fr)] min-[701px]:data-[collapsed=true]:grid-cols-[76px_minmax(0,1fr)] motion-reduce:transition-none [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-3 [&_:focus-visible]:outline-blue-400" data-controller="sidebar">
+        <nav id="workspace-navigation" data-ui="workspace-navigation" class="sticky top-0 flex h-dvh flex-col overflow-y-auto bg-slate-900 px-3 py-4 text-slate-300 max-[700px]:group-data-[collapsed=false]/sidebar:fixed max-[700px]:group-data-[collapsed=false]/sidebar:inset-y-0 max-[700px]:group-data-[collapsed=false]/sidebar:left-0 max-[700px]:group-data-[collapsed=false]/sidebar:z-40 max-[700px]:group-data-[collapsed=false]/sidebar:w-[min(280px,calc(100vw-2rem))] max-[700px]:group-data-[collapsed=false]/sidebar:shadow-2xl" aria-label="Головне меню">
+            <div data-ui="workspace-navigation-header" class="mb-6 flex min-h-13 items-center gap-3">
+                <button type="button" data-ui="workspace-toggle" class="flex h-11 w-13 shrink-0 items-center justify-center rounded-lg text-white hover:bg-slate-800" data-action="sidebar#toggle" data-sidebar-target="toggle" aria-controls="workspace-menu" aria-expanded="true" aria-label="Згорнути меню" title="Згорнути меню">
                     {% include 'layouts/_menu_icon.html.twig' with {icon: 'menu'} only %}
                 </button>
-                <a href="{{ path('app_account') }}" class="workspace-brand workspace-label">College LMS</a>
+                <a href="{{ path('app_account') }}" data-ui="workspace-brand workspace-label" class="whitespace-nowrap text-lg font-semibold text-white min-w-0 group-data-[collapsed=true]/sidebar:hidden">College LMS</a>
             </div>
-            <ul id="workspace-menu" class="workspace-menu">
+            <ul id="workspace-menu" data-ui="workspace-menu" class="grid list-none gap-1.5">
                 {% for item in menu %}
                     {% set active = currentRoute == item.route or (item.route == 'app_admin_users' and currentRoute == 'app_admin_user_role') or (item.route == 'app_curator_groups' and currentRoute in ['app_curator_group_new', 'app_curator_group_show']) or (item.route == 'app_curator_students' and currentRoute == 'app_curator_student_assign') or (item.route == 'app_teacher_disciplines' and currentRoute in ['app_teacher_discipline_new', 'app_teacher_discipline_show', 'app_teacher_discipline_edit']) %}
                     <li>
-                        <a href="{{ path(item.route) }}" class="workspace-menu-link" title="{{ item.label }}" aria-label="{{ item.label }}"{% if active %} aria-current="{{ currentRoute == item.route ? 'page' : 'location' }}"{% endif %}>
+                        <a href="{{ path(item.route) }}" data-ui="workspace-menu-link" class="flex min-h-12 w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm leading-normal text-slate-300 hover:bg-slate-800 hover:text-white aria-[current]:bg-blue-600 aria-[current]:text-white" title="{{ item.label }}" aria-label="{{ item.label }}"{% if active %} aria-current="{{ currentRoute == item.route ? 'page' : 'location' }}"{% endif %}>
                             {% include 'layouts/_menu_icon.html.twig' with {icon: item.icon} only %}
-                            <span class="workspace-label">{{ item.label }}</span>
+                            <span data-ui="workspace-label" class="min-w-0 group-data-[collapsed=true]/sidebar:hidden">{{ item.label }}</span>
                         </a>
                     </li>
                 {% endfor %}
             </ul>
-            <div class="workspace-navigation-footer">
-                <p class="workspace-label workspace-role">{{ app.user.role.label() }}</p>
+            <div data-ui="workspace-navigation-footer" class="mt-auto pt-6">
+                <p data-ui="workspace-label workspace-role" class="min-w-0 group-data-[collapsed=true]/sidebar:hidden px-3.5 py-3 text-xs text-slate-400">{{ app.user.role.label() }}</p>
                 <form action="{{ path('app_logout') }}" method="post">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token('sign_out') }}">
-                    <button type="submit" class="workspace-menu-link" title="Вийти з облікового запису" aria-label="Вийти з облікового запису">
+                    <button type="submit" data-ui="workspace-menu-link" class="flex min-h-12 w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm leading-normal text-slate-300 hover:bg-slate-800 hover:text-white aria-[current]:bg-blue-600 aria-[current]:text-white" title="Вийти з облікового запису" aria-label="Вийти з облікового запису">
                         {% include 'layouts/_menu_icon.html.twig' with {icon: 'logout'} only %}
-                        <span class="workspace-label">Вийти з облікового запису</span>
+                        <span data-ui="workspace-label" class="min-w-0 group-data-[collapsed=true]/sidebar:hidden">Вийти з облікового запису</span>
                     </button>
                 </form>
             </div>
         </nav>
-        <div class="workspace-content">
-            <header class="workspace-header"><span>{{ app.user.fullName }}</span><span>{{ app.user.role.label() }}</span></header>
-            <main id="main-content" class="workspace-main">
-                {% for message in app.flashes('success') %}<div role="status" class="workspace-notice">{{ message }}</div>{% endfor %}
+        <div data-ui="workspace-content" class="col-start-2 min-w-0">
+            <header data-ui="workspace-header" class="flex min-h-18 flex-wrap items-center justify-end gap-x-5 gap-y-2 border-b border-slate-200 bg-white p-4 text-sm sm:px-8 [&_span:last-child]:text-slate-500"><span>{{ app.user.fullName }}</span><span>{{ app.user.role.label() }}</span></header>
+            <main id="main-content" data-ui="workspace-main" class="mx-auto w-full max-w-[1480px] px-3 py-5 min-[701px]:p-8">
+                {% for message in app.flashes('success') %}<div role="status" data-ui="workspace-notice" class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">{{ message }}</div>{% endfor %}
                 {% block workspace_content %}{% endblock %}
             </main>
         </div>

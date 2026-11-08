@@ -1,11 +1,11 @@
 {% set password = 'password' in field.vars.block_prefixes %}
 {% set invalid = field.vars.errors|length > 0 %}
 {% set described_by = (field.vars.help ? field.vars.id ~ '_help ' : '') ~ (invalid ? field.vars.id ~ '_errors' : '') %}
-{% set attributes = {class: 'auth-input' ~ (password ? ' pr-12' : '')} %}
+{% set attributes = {class: 'block w-full min-w-0 min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-xs outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 aria-invalid:border-red-500 disabled:cursor-not-allowed disabled:bg-slate-100 rounded-xl px-4 py-3 placeholder:text-slate-400 aria-invalid:focus:ring-red-500/10' ~ (password ? ' pr-12' : '')} %}
 {% if described_by|trim %}{% set attributes = attributes|merge({'aria-describedby': described_by|trim}) %}{% endif %}
 {% if invalid %}{% set attributes = attributes|merge({'aria-invalid': 'true'}) %}{% endif %}
 <div class="space-y-2" {% if password %}data-controller="password-visibility"{% endif %}>
-    {{ form_label(field, null, {label_attr: {class: 'field-label'}}) }}
+    {{ form_label(field, null, {label_attr: {class: 'block text-sm font-semibold text-slate-700'}}) }}
     <div class="relative">
         {% if password %}{% set attributes = attributes|merge({'data-password-visibility-target': 'input'}) %}{% endif %}
         {{ form_widget(field, {attr: attributes}) }}

@@ -1,21 +1,21 @@
 {% extends 'admin/layout.html.twig' %}
 {% block title %}{{ creating ? 'Створення дисципліни' : 'Редагування дисципліни' }} · College LMS{% endblock %}
 {% block admin_content %}
-    <div class="workspace-card">
+    <div data-ui="workspace-card" class="max-w-[640px] rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 [&_h1]:text-[28px] [&_h1]:font-semibold [&_h1]:tracking-tight [&_p]:mt-4 [&_p]:leading-relaxed [&_p]:text-slate-500 [&_p]:wrap-anywhere">
         <a href="{{ path('app_teacher_disciplines') }}">← Мої дисципліни</a>
         <h1>{{ creating ? 'Створення дисципліни' : 'Редагування дисципліни' }}</h1>
         {{ form_start(disciplineForm) }}
             {% if disciplineForm.vars.errors|length %}<div role="alert">{{ form_errors(disciplineForm) }}</div>{% endif %}
-            <div class="admin-field">{{ form_row(disciplineForm.name) }}</div>
-            <div class="admin-field">{{ form_row(disciplineForm.description) }}</div>
-            <fieldset class="discipline-group-choices">
+            <div data-ui="admin-field" class="mb-3">{{ form_row(disciplineForm.name) }}</div>
+            <div data-ui="admin-field" class="mb-3">{{ form_row(disciplineForm.description) }}</div>
+            <fieldset data-ui="discipline-group-choices" class="my-5 [&_legend]:mb-2 [&_legend]:font-semibold">
                 <legend>Закріпити за групами</legend>
                 {{ form_errors(disciplineForm.groups) }}
                 {{ form_widget(disciplineForm.groups) }}
                 {{ form_help(disciplineForm.groups) }}
                 {% if disciplineForm.groups|length == 0 %}<p>Груп ще немає. Їх має створити куратор.</p>{% endif %}
             </fieldset>
-            <button class="admin-button" type="submit">{{ creating ? 'Створити дисципліну' : 'Зберегти дисципліну' }}</button>
+            <button data-ui="admin-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">{{ creating ? 'Створити дисципліну' : 'Зберегти дисципліну' }}</button>
         {{ form_end(disciplineForm) }}
     </div>
 {% endblock %}

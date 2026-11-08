@@ -1,5 +1,5 @@
 {% if pages > 1 %}
-    <nav class="admin-pagination" aria-label="Сторінки списку">
+    <nav data-ui="admin-pagination" class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center" aria-label="Сторінки списку">
         {% if page > 1 %}<a rel="prev" href="{{ path(route, (query|default({}))|merge({page: page - 1})) }}">← Попередня</a>{% endif %}
         <span aria-current="page">Сторінка {{ page }} з {{ pages }}</span>
         {% if page < pages %}<a rel="next" href="{{ path(route, (query|default({}))|merge({page: page + 1})) }}">Наступна →</a>{% endif %}

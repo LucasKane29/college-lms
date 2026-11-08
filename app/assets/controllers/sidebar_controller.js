@@ -15,7 +15,7 @@ export default class extends Controller {
     }
 
     toggle() {
-        const collapsed = !this.element.classList.contains('workspace-collapsed');
+        const collapsed = this.element.dataset.collapsed !== 'true';
         this.render(collapsed);
         try {
             window.localStorage.setItem('college-lms-sidebar-collapsed', String(collapsed));
@@ -25,7 +25,7 @@ export default class extends Controller {
     }
 
     render(collapsed) {
-        this.element.classList.toggle('workspace-collapsed', collapsed);
+        this.element.dataset.collapsed = String(collapsed);
         const label = collapsed ? 'Розгорнути меню' : 'Згорнути меню';
         this.toggleTarget.setAttribute('aria-expanded', String(!collapsed));
         this.toggleTarget.setAttribute('aria-label', label);

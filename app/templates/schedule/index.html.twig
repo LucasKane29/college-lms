@@ -1,10 +1,10 @@
 {% extends 'schedule/layout.html.twig' %}
 {% block title %}Розклад · College LMS{% endblock %}
 {% block workspace_content %}
-    <div class="schedule-top"><div><p class="schedule-eyebrow">Планування занять</p><h1>Розклад</h1></div></div>
-    <section class="schedule-panel" aria-label="Календар редагування розкладу">
-        <div class="schedule-toolbar">
-            <form action="{{ path('app_schedule') }}" method="get" class="schedule-filter">
+    <div data-ui="schedule-top" class="mb-6 flex flex-col items-start justify-between gap-6 min-[761px]:flex-row [&_h1]:text-[28px] [&_h1]:font-semibold [&_h1]:tracking-tight"><div><p data-ui="schedule-eyebrow" class="mb-2 text-xs tracking-widest text-blue-600 uppercase">Планування занять</p><h1>Розклад</h1></div></div>
+    <section data-ui="schedule-panel" class="rounded-2xl border border-slate-200 bg-white p-3.5 min-[761px]:p-6 [&_a:not([data-ui~=schedule-button]):not([data-ui~=schedule-cell]):not([data-ui~=schedule-month-day])]:text-blue-700" aria-label="Календар редагування розкладу">
+        <div data-ui="schedule-toolbar" class="flex flex-wrap items-end justify-between gap-3 [&_h1]:text-[28px] [&_h1]:font-semibold [&_h1]:tracking-tight">
+            <form action="{{ path('app_schedule') }}" method="get" data-ui="schedule-filter" class="flex w-full flex-wrap items-stretch gap-3 min-[761px]:w-auto min-[761px]:items-end [&_label]:grid [&_label]:min-w-35 [&_label]:flex-1 [&_label]:gap-1.5 [&_label]:text-[13px] [&_label]:text-slate-600 [&_input]:w-full [&_input]:min-h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-300 [&_input]:bg-white [&_input]:px-3 [&_input]:py-2 [&_select]:min-h-11 [&_select]:max-w-full [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-300 [&_select]:bg-white [&_select]:px-3 [&_select]:py-2">
                 <label>Початкова дата<input type="date" name="from" value="{{ from|date('Y-m-d') }}" required></label>
                 <label>Кінцева дата<input type="date" name="to" value="{{ to|date('Y-m-d') }}" required></label>
                 <label>Дисципліна<select name="discipline"><option value="">Усі дисципліни</option>
@@ -13,35 +13,35 @@
                 <label>Група<select name="group"><option value="">Усі групи</option>
                     {% for group in allGroups %}<option value="{{ group.id }}"{% if selectedGroup and selectedGroup.id == group.id %} selected{% endif %}>{{ group.name }}</option>{% endfor %}
                 </select></label>
-                <button class="schedule-button" type="submit">Показати</button>
+                <button data-ui="schedule-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">Показати</button>
                 <a href="{{ path('app_schedule') }}">Скинути фільтри</a>
             </form>
-            {% if is_granted('ROLE_HEAD_TEACHER') %}<a class="schedule-button secondary" href="{{ path('app_schedule_pairs') }}">Налаштування пар</a>{% endif %}
+            {% if is_granted('ROLE_HEAD_TEACHER') %}<a data-ui="schedule-button secondary" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 border border-blue-200 bg-blue-50! text-blue-700! hover:bg-blue-100!" href="{{ path('app_schedule_pairs') }}">Налаштування пар</a>{% endif %}
         </div>
-        <p class="schedule-hint">За замовчуванням — поточний тиждень, понеділок–неділя. Для періоду до місяця — перегортання по тижнях, понад місяць — по місяцях. Діапазон — до 366 днів.</p>
-        <nav class="schedule-paging" aria-label="Перегортання розкладу">
+        <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">За замовчуванням — поточний тиждень, понеділок–неділя. Для періоду до місяця — перегортання по тижнях, понад місяць — по місяцях. Діапазон — до 366 днів.</p>
+        <nav data-ui="schedule-paging" class="my-6 flex flex-wrap items-center justify-between gap-4 border-y border-slate-200 py-3.5 text-sm [&_a]:text-blue-700 [&_[aria-disabled]]:text-slate-400" aria-label="Перегортання розкладу">
             {% if previous %}<a href="{{ path('app_schedule', query|merge({cursor: previous, day: null})) }}" rel="prev">← Попередній {{ mode == 'week' ? 'тиждень' : 'місяць' }}</a>{% else %}<span aria-disabled="true">← Назад</span>{% endif %}
             <strong>{{ visibleFrom|date('d.m.Y') }} — {{ visibleTo|date('d.m.Y') }} · {{ mode == 'week' ? 'Тиждень' : 'Місяць' }}</strong>
             {% if next %}<a href="{{ path('app_schedule', query|merge({cursor: next, day: null})) }}" rel="next">Наступний {{ mode == 'week' ? 'тиждень' : 'місяць' }} →</a>{% else %}<span aria-disabled="true">Далі →</span>{% endif %}
         </nav>
-        {% if not groups %}<p class="schedule-empty">Груп ще немає.</p>{% endif %}
-        {% if not pairs %}<p class="schedule-empty">Пари ще не налаштовано.</p>{% endif %}
+        {% if not groups %}<p data-ui="schedule-empty" class="rounded-lg bg-slate-50 p-5 text-slate-500">Груп ще немає.</p>{% endif %}
+        {% if not pairs %}<p data-ui="schedule-empty" class="rounded-lg bg-slate-50 p-5 text-slate-500">Пари ще не налаштовано.</p>{% endif %}
         {% if mode == 'month' %}
-            <div class="schedule-month" aria-label="Дні місяця">
-                {% for label in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'] %}<span class="schedule-weekday">{{ label }}</span>{% endfor %}
+            <div data-ui="schedule-month" class="grid grid-cols-7 gap-1 min-[761px]:gap-1.5" aria-label="Дні місяця">
+                {% for label in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'] %}<span data-ui="schedule-weekday" class="p-2 text-xs text-slate-500">{{ label }}</span>{% endfor %}
                 {% for day in days %}
-                    <a class="schedule-month-day{% if day == selected %} selected{% endif %}" style="{% if loop.first %}grid-column-start: {{ day|date('N') }}{% endif %}" href="{{ path('app_schedule', query|merge({day: day|date('Y-m-d')})) }}"{% if day == selected %} aria-current="date"{% endif %}>
+                    <a data-ui="schedule-month-day{% if day == selected %} selected{% endif %}" class="flex min-h-16 flex-col gap-2 rounded-lg border border-slate-200 px-1 py-1.5 text-xs hover:border-blue-600 hover:bg-blue-50 aria-[current=date]:border-blue-600 aria-[current=date]:bg-blue-50 min-[761px]:min-h-[82px] min-[761px]:p-2.5 min-[761px]:text-sm [&_span]:text-[10px] [&_span]:text-slate-500 min-[761px]:[&_span]:text-xs {{ loop.first ? ['col-start-1', 'col-start-2', 'col-start-3', 'col-start-4', 'col-start-5', 'col-start-6', 'col-start-7'][day|date('N') - 1] : '' }}" href="{{ path('app_schedule', query|merge({day: day|date('Y-m-d')})) }}"{% if day == selected %} aria-current="date"{% endif %}>
                         <strong>{{ day|date('d.m') }}</strong><span>Занять: {{ counts[day|date('Y-m-d')] ?? 0 }}</span>
                     </a>
                 {% endfor %}
             </div>
         {% endif %}
         {% if is_granted('ROLE_HEAD_TEACHER') %}
-            <p class="schedule-hint">Натисніть порожню клітинку, щоб додати заняття, або заповнену — щоб змінити дисципліну чи видалити заняття. Тему призначає викладач дисципліни. Клітинки інших дисциплін позначено як зайняті.</p>
+            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Натисніть порожню клітинку, щоб додати заняття, або заповнену — щоб змінити дисципліну чи видалити заняття. Тему призначає викладач дисципліни. Клітинки інших дисциплін позначено як зайняті.</p>
         {% elseif app.user.role.value == 'ROLE_TEACHER' %}
-            <p class="schedule-hint">Натисніть своє заняття, щоб призначити або змінити тему. Дату, групу, пару та дисципліну змінюють завуч або адміністратор.</p>
+            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Натисніть своє заняття, щоб призначити або змінити тему. Дату, групу, пару та дисципліну змінюють завуч або адміністратор.</p>
         {% else %}
-            <p class="schedule-hint">Перегляд розкладу та призначених тем занять.</p>
+            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Перегляд розкладу та призначених тем занять.</p>
         {% endif %}
         {% if groups and pairs %}{% for day in tableDays %}{% include 'schedule/_day.html.twig' %}{% endfor %}{% endif %}
     </section>

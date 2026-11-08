@@ -69,7 +69,7 @@ class AdminUserListTest extends WebTestCase
         self::assertSelectorCount(4, 'select[name="perPage"] option');
         self::assertSelectorCount(3, 'div[data-controller="datepicker"]');
         self::assertSelectorNotExists('input[data-controller="datepicker"]');
-        self::assertSelectorTextContains('.admin-summary', 'Знайдено: 106');
+        self::assertSelectorTextContains('[data-ui~="admin-summary"]', 'Знайдено: 106');
         self::assertSelectorExists('select[name="perPage"] option[value="'.$size.'"][selected]');
         self::assertStringNotContainsString('fixture-user-hash', $this->client->getResponse()->getContent());
     }
@@ -82,7 +82,7 @@ class AdminUserListTest extends WebTestCase
         ]);
         self::assertResponseIsSuccessful();
         self::assertSelectorCount(10, 'tbody tr[data-user-id]');
-        self::assertSelectorTextContains('.admin-summary', 'Записи 11–20 з 25');
+        self::assertSelectorTextContains('[data-ui~="admin-summary"]', 'Записи 11–20 з 25');
         self::assertSelectorTextContains('tbody tr:first-child', 'person011@example.test');
         $next = $crawler->filter('a[rel="next"]')->link();
         parse_str(parse_url($next->getUri(), PHP_URL_QUERY), $parameters);
@@ -119,7 +119,7 @@ class AdminUserListTest extends WebTestCase
         $this->client->request('GET', '/admin/users', $filters);
         self::assertResponseIsSuccessful();
         self::assertSelectorCount($expected, 'tbody tr[data-user-id]');
-        self::assertSelectorTextContains('.admin-summary', 'Знайдено: '.$expected.' ·');
+        self::assertSelectorTextContains('[data-ui~="admin-summary"]', 'Знайдено: '.$expected.' ·');
         if (null !== $email) {
             self::assertSelectorTextContains('tbody', $email);
         } else {
@@ -173,9 +173,9 @@ class AdminUserListTest extends WebTestCase
         $this->client->request('GET', '/admin/users', ['page' => 999, 'perPage' => 10]);
         self::assertResponseIsSuccessful();
         self::assertSelectorCount(6, 'tbody tr[data-user-id]');
-        self::assertSelectorTextContains('.admin-pagination', 'Сторінка 3 з 3');
+        self::assertSelectorTextContains('[data-ui~="admin-pagination"]', 'Сторінка 3 з 3');
         $this->client->request('GET', '/admin/users', ['page' => -1, 'perPage' => 10]);
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.admin-pagination', 'Сторінка 1 з 3');
+        self::assertSelectorTextContains('[data-ui~="admin-pagination"]', 'Сторінка 1 з 3');
     }
 }

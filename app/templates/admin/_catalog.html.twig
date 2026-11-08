@@ -1,24 +1,24 @@
 <turbo-frame id="user-catalog" data-turbo-action="advance" tabindex="-1">
-{% if successMessage is defined %}<div role="status" class="admin-notice">{{ successMessage }}</div>{% endif %}
+{% if successMessage is defined %}<div role="status" data-ui="admin-notice" class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">{{ successMessage }}</div>{% endif %}
     <h1>Користувачі</h1>
-    <p class="admin-description">Перегляд облікових записів і керування ролями.</p>
-    <section class="admin-panel" aria-labelledby="filters-title">
+    <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Перегляд облікових записів і керування ролями.</p>
+    <section data-ui="admin-panel" class="rounded-xl border border-slate-200 bg-white p-5 [&_h2]:mb-4 [&_h2]:text-base [&_h2]:font-semibold" aria-labelledby="filters-title">
         <h2 id="filters-title">Фільтри</h2>
-        {{ form_start(filterForm, {attr: {class: 'admin-filters'}}) }}
+        {{ form_start(filterForm, {attr: {class: 'grid grid-cols-1 gap-4 min-[541px]:grid-cols-2 min-[1001px]:grid-cols-4'}}) }}
             {{ form_errors(filterForm) }}
             {% for field in filterForm %}
-                <div class="admin-field">{{ form_row(field) }}</div>
+                <div data-ui="admin-field" class="mb-3">{{ form_row(field) }}</div>
             {% endfor %}
-            <div class="admin-filter-actions">
-                <button type="submit" class="admin-button">Застосувати</button>
+            <div data-ui="admin-filter-actions" class="col-span-full flex flex-wrap items-center gap-4">
+                <button type="submit" data-ui="admin-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60">Застосувати</button>
                 <a href="{{ path('app_admin_users') }}">Скинути фільтри</a>
             </div>
         {{ form_end(filterForm) }}
     </section>
     {% if validFilters %}
-        <p class="admin-summary" role="status">Знайдено: {{ total }} · Записи {{ total ? (page - 1) * perPage + 1 : 0 }}–{{ min(page * perPage, total) }} з {{ total }}</p>
-        <div class="admin-table-scroll" role="region" aria-label="Список користувачів" tabindex="0">
-            <table class="admin-table">
+        <p data-ui="admin-summary" class="mt-6 mb-3 text-sm text-slate-600" role="status">Знайдено: {{ total }} · Записи {{ total ? (page - 1) * perPage + 1 : 0 }}–{{ min(page * perPage, total) }} з {{ total }}</p>
+        <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white" role="region" aria-label="Список користувачів" tabindex="0">
+            <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
                 <caption class="sr-only">Користувачі College LMS</caption>
                 <thead><tr>
                     <th scope="col">ID</th><th scope="col">Ім’я та прізвище</th><th scope="col">Email</th>
@@ -30,7 +30,7 @@
                         <tr data-user-id="{{ user.id }}">
                             <td>{{ user.id }}</td><td>{{ user.fullName }}</td><td>{{ user.email }}</td>
                             <td>{{ user.phoneNumber ?? '—' }}</td><td>{{ user.birthDate ? user.birthDate|date('d.m.Y') : '—' }}</td>
-                            <td><span class="admin-role">{{ user.role.label() }}</span></td>
+                            <td><span data-ui="admin-role" class="inline-block whitespace-nowrap rounded-full bg-blue-50 px-2.5 py-1 text-blue-800">{{ user.role.label() }}</span></td>
                             <td>{{ user.studentGroup ? user.studentGroup.name : '—' }}</td>
                             <td>{{ user.password is not empty ? 'Встановлено' : 'Не встановлено' }}</td>
                             <td><time datetime="{{ user.createdAt|date('c') }}">{{ user.createdAt|date('d.m.Y H:i') }}</time></td>
@@ -41,13 +41,13 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="10" class="admin-empty">Користувачів за обраними фільтрами не знайдено.</td></tr>
+                        <tr><td colspan="10" data-ui="admin-empty" class="px-4! py-12! text-center text-slate-500">Користувачів за обраними фільтрами не знайдено.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% if pages > 1 %}
-            <nav aria-label="Сторінки користувачів" class="admin-pagination">
+            <nav aria-label="Сторінки користувачів" data-ui="admin-pagination" class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center">
                 {% if page > 1 %}
                     <a href="{{ path('app_admin_users', query|merge({page: 1})) }}">Перша</a>
                     <a rel="prev" href="{{ path('app_admin_users', query|merge({page: page - 1})) }}">← Попередня</a>

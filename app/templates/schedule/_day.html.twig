@@ -1,10 +1,10 @@
 {% set dateKey = day|date('Y-m-d') %}
 {% set weekdays = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя'] %}
-<div class="schedule-day">
+<div data-ui="schedule-day" class="mt-6 [&_h2]:mb-3 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h2_span]:ml-2 [&_h2_span]:inline-block [&_h2_span]:text-xs [&_h2_span]:font-normal [&_h2_span]:text-slate-500">
     <h2>{{ weekdays[day|date('N') - 1] }}, {{ day|date('d.m.Y') }} <span>{{ day|date('N') >= 6 ? 'Вихідний день' : 'Будній день' }}</span></h2>
-    <div class="schedule-table-scroll" tabindex="0" role="region" aria-label="Розклад на {{ day|date('d.m.Y') }}">
-        <table class="schedule-table">
-            <caption class="schedule-sr-only">Розклад занять на {{ day|date('d.m.Y') }}</caption>
+    <div data-ui="schedule-table-scroll" class="overflow-x-auto rounded-xl" tabindex="0" role="region" aria-label="Розклад на {{ day|date('d.m.Y') }}">
+        <table data-ui="schedule-table" class="w-full border-separate border-spacing-0 text-sm [&_th]:border-r [&_th]:border-b [&_td]:border-r [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:p-3 [&_td]:p-1 [&_th]:text-left [&_th]:align-top [&_td]:align-top [&_tr>:first-child]:border-l [&_tr>:first-child]:border-slate-200 [&_thead_th]:min-w-40 [&_thead_th]:border-t [&_thead_th]:bg-slate-100 [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-1 [&_th:first-child]:min-w-28 [&_th:first-child]:bg-slate-50 [&_thead_th_span]:mt-1 [&_thead_th_span]:block [&_thead_th_span]:text-xs [&_thead_th_span]:font-normal [&_thead_th_span]:text-slate-500 [&_td]:min-w-[170px]">
+            <caption data-ui="schedule-sr-only" class="sr-only">Розклад занять на {{ day|date('d.m.Y') }}</caption>
             <thead><tr><th scope="col">Група</th>{% for pair in pairs %}<th scope="col">{% if is_granted('ROLE_HEAD_TEACHER') %}<a href="{{ path('app_schedule_pair_edit', query|merge({id: pair.id, view: query.view|default('account')})) }}" data-turbo-frame="schedule-modal" aria-label="Редагувати пару {{ pair.number }}">{{ pair.number }} пара<span>{{ pair.startOn(day)|date('H:i') }}–{{ pair.endOn(day)|date('H:i') }}</span></a>{% else %}{{ pair.number }} пара<span>{{ pair.startOn(day)|date('H:i') }}–{{ pair.endOn(day)|date('H:i') }}</span>{% endif %}</th>{% endfor %}</tr></thead>
             <tbody>
                 {% for group in groups %}
@@ -13,18 +13,18 @@
                             {% set lesson = grid[dateKey][group.id][pair.id] ?? null %}
                             <td>
                                 {% if lesson and selectedDiscipline|default(null) and lesson.discipline.id != selectedDiscipline.id %}
-                                    <span class="schedule-cell schedule-occupied">Зайнято іншою дисципліною</span>
+                                    <span data-ui="schedule-cell schedule-occupied" class="flex h-full min-h-[90px] flex-col gap-2 rounded-lg p-3 leading-snug [&_span]:text-xs [&_span]:text-slate-500 [&:is(a):hover]:bg-blue-100 [&:is(a):hover]:outline-2 [&:is(a):hover]:-outline-offset-2 [&:is(a):hover]:outline-blue-300 bg-slate-100 text-xs text-slate-500">Зайнято іншою дисципліною</span>
                                 {% elseif is_granted('ROLE_HEAD_TEACHER') %}
-                                    <a class="schedule-cell{% if lesson %} filled{% endif %}" href="{{ path('app_schedule_cell', query|merge({date: dateKey, groupId: group.id, pairId: pair.id})) }}" data-turbo-frame="schedule-modal" aria-label="{{ lesson ? 'Редагувати' : 'Додати' }} заняття: {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
-                                        {% if lesson %}<strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% if lesson.topic %}<span>{{ lesson.topic.name }}</span>{% endif %}{% else %}<span class="schedule-add">+ Додати</span>{% endif %}
+                                    <a data-ui="schedule-cell{% if lesson %} filled{% endif %}" class="flex h-full min-h-[90px] flex-col gap-2 rounded-lg p-3 leading-snug [&_span]:text-xs [&_span]:text-slate-500 [&:is(a):hover]:bg-blue-100 [&:is(a):hover]:outline-2 [&:is(a):hover]:-outline-offset-2 [&:is(a):hover]:outline-blue-300{% if lesson %} bg-blue-50 text-blue-900{% endif %}" href="{{ path('app_schedule_cell', query|merge({date: dateKey, groupId: group.id, pairId: pair.id})) }}" data-turbo-frame="schedule-modal" aria-label="{{ lesson ? 'Редагувати' : 'Додати' }} заняття: {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
+                                        {% if lesson %}<strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% if lesson.topic %}<span>{{ lesson.topic.name }}</span>{% endif %}{% else %}<span data-ui="schedule-add" class="m-auto text-blue-600!">+ Додати</span>{% endif %}
                                     </a>
                                 {% elseif lesson and is_granted('SCHEDULE_TOPIC_ASSIGN', lesson) %}
-                                    <a class="schedule-cell filled" href="{{ path('app_schedule_topic', query|merge({id: lesson.id, view: query.view|default('account')})) }}" data-turbo-frame="schedule-modal" aria-label="Призначити тему: {{ lesson.discipline.name }}, {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
+                                    <a data-ui="schedule-cell filled" class="flex h-full min-h-[90px] flex-col gap-2 rounded-lg p-3 leading-snug [&_span]:text-xs [&_span]:text-slate-500 [&:is(a):hover]:bg-blue-100 [&:is(a):hover]:outline-2 [&:is(a):hover]:-outline-offset-2 [&:is(a):hover]:outline-blue-300 bg-blue-50 text-blue-900" href="{{ path('app_schedule_topic', query|merge({id: lesson.id, view: query.view|default('account')})) }}" data-turbo-frame="schedule-modal" aria-label="Призначити тему: {{ lesson.discipline.name }}, {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
                                         <strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span><span>{{ lesson.topic ? lesson.topic.name : 'Призначити тему' }}</span>
                                     </a>
                                 {% elseif lesson %}
-                                    <div class="schedule-cell filled"><strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% if lesson.topic %}<span>{{ lesson.topic.name }}</span>{% endif %}</div>
-                                {% else %}<span class="schedule-free">—</span>{% endif %}
+                                    <div data-ui="schedule-cell filled" class="flex h-full min-h-[90px] flex-col gap-2 rounded-lg p-3 leading-snug [&_span]:text-xs [&_span]:text-slate-500 [&:is(a):hover]:bg-blue-100 [&:is(a):hover]:outline-2 [&:is(a):hover]:-outline-offset-2 [&:is(a):hover]:outline-blue-300 bg-blue-50 text-blue-900"><strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% if lesson.topic %}<span>{{ lesson.topic.name }}</span>{% endif %}</div>
+                                {% else %}<span data-ui="schedule-free" class="block p-6 text-center text-slate-400">—</span>{% endif %}
                             </td>
                         {% endfor %}
                     </tr>

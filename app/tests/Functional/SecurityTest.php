@@ -71,7 +71,7 @@ class SecurityTest extends WebTestCase
         self::assertResponseRedirects('/account', 303);
         $this->client->followRedirect();
         self::assertSelectorTextContains('h1', 'Розклад занять');
-        self::assertSelectorTextContains('.schedule-profile', 'Олена Коваленко');
+        self::assertSelectorTextContains('[data-ui~="schedule-profile"]', 'Олена Коваленко');
         self::assertSelectorTextContains('main', 'student@example.com');
 
         $this->client->request('GET', '/registration');
@@ -375,10 +375,10 @@ class SecurityTest extends WebTestCase
         $this->client->loginUser($this->createUser('menu@example.com', $role));
         $this->client->request('GET', '/account');
         self::assertResponseIsSuccessful();
-        self::assertSelectorExists('aside.schedule-profile');
+        self::assertSelectorExists('aside[data-ui~="schedule-profile"]');
         self::assertSelectorExists('[data-controller="sidebar"]');
         self::assertSelectorExists('button[aria-controls="workspace-menu"][aria-expanded="true"]');
-        self::assertSelectorExists('.workspace-menu a[href="/account"][aria-current="page"]');
+        self::assertSelectorExists('[data-ui~="workspace-menu"] a[href="/account"][aria-current="page"]');
         $expected = match ($role) {
             UserRole::Student => ['/account', '/student/group', '/student/disciplines', '/student/teachers'],
             UserRole::Teacher => ['/account', '/schedule', '/teacher/groups', '/teacher/disciplines'],
@@ -388,7 +388,7 @@ class SecurityTest extends WebTestCase
             UserRole::Admin => ['/account', '/schedule', '/admin/users', '/curator/groups', '/curator/students', '/teacher/disciplines'],
             default => ['/account'],
         };
-        $actual = $this->client->getCrawler()->filter('.workspace-menu a')->each(
+        $actual = $this->client->getCrawler()->filter('[data-ui~="workspace-menu"] a')->each(
             static fn ($link): string => $link->attr('href'),
         );
         self::assertSame($expected, $actual);
@@ -412,7 +412,7 @@ class SecurityTest extends WebTestCase
                 self::assertResponseIsSuccessful();
                 self::assertSelectorNotExists('aside');
                 if (UserRole::Admin !== $role) {
-                    self::assertSelectorExists('.workspace-menu a[href="'.$url.'"][aria-current="page"]');
+                    self::assertSelectorExists('[data-ui~="workspace-menu"] a[href="'.$url.'"][aria-current="page"]');
                 }
             } else {
                 self::assertResponseStatusCodeSame(403);

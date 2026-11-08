@@ -14,7 +14,7 @@ export default class extends Controller {
 
     close(event) {
         const frame = this.element.closest('turbo-frame');
-        if (!document.querySelector('.schedule-table')) {
+        if (!document.querySelector('[data-ui~="schedule-table"]')) {
             const backLink = this.element.querySelector('[data-modal-return]');
             if (backLink && event?.type === 'cancel') {
                 event.preventDefault();

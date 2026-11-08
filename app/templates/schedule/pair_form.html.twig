@@ -3,8 +3,8 @@
 {% block workspace_content %}
     <a href="{{ path(returnRoute, query) }}">← Назад</a>
     <turbo-frame id="schedule-modal">
-    <dialog open class="schedule-dialog schedule-pair-form" data-controller="schedule-dialog" data-action="cancel->schedule-dialog#close click->schedule-dialog#backdrop turbo:before-cache@document->schedule-dialog#close" aria-labelledby="pair-title">
-        <div class="schedule-dialog-heading">
+    <dialog open data-ui="schedule-dialog schedule-pair-form" class="fixed inset-0 m-auto w-[calc(100vw-2rem)] max-w-[560px] max-h-[calc(100dvh-3rem)] overflow-y-auto rounded-2xl border border-slate-300 bg-white p-5 text-slate-900 shadow-2xl backdrop:bg-slate-900/50 sm:p-7 [&_p]:my-2 [&_p]:text-sm [&_p]:text-slate-500 [&_form]:mt-5 [&_a]:text-blue-700 [&_[role=alert]]:text-sm [&_[role=alert]]:text-red-700 [&_fieldset]:mt-5 [&_fieldset]:rounded-lg [&_fieldset]:border [&_fieldset]:border-slate-200 [&_fieldset]:p-4 [&_legend]:px-2 [&_legend]:font-semibold" data-controller="schedule-dialog" data-action="cancel->schedule-dialog#close click->schedule-dialog#backdrop turbo:before-cache@document->schedule-dialog#close" aria-labelledby="pair-title">
+        <div data-ui="schedule-dialog-heading" class="mb-3.5 flex items-center justify-between gap-4 [&_h1]:text-[22px] [&_h1]:font-semibold [&_a]:px-2.5 [&_a]:py-1 [&_a]:text-[26px]">
             <h1 id="pair-title">{{ creating ? 'Нова пара' : 'Редагування пари' }}</h1>
             <a href="{{ path(returnRoute, query) }}" data-modal-return data-action="schedule-dialog#close" aria-label="Закрити">×</a>
         </div>
@@ -12,9 +12,9 @@
         {{ form_start(pairForm, {attr: {'data-turbo-frame': inModal ? 'schedule-modal' : '_top'}}) }}
             <div role="alert">{{ form_errors(pairForm) }}</div>
             {{ form_row(pairForm.number) }}
-            <fieldset><legend>Будні</legend><div class="schedule-pair-times">{{ form_row(pairForm.weekdayStart) }}{{ form_row(pairForm.weekdayEnd) }}</div></fieldset>
-            <fieldset><legend>Вихідні</legend><div class="schedule-pair-times">{{ form_row(pairForm.weekendStart) }}{{ form_row(pairForm.weekendEnd) }}</div></fieldset>
-            <div class="schedule-actions"><button class="schedule-button" type="submit">Зберегти пару</button><a href="{{ path(returnRoute, query) }}" data-action="schedule-dialog#close">Скасувати</a></div>
+            <fieldset><legend>Будні</legend><div data-ui="schedule-pair-times" class="grid grid-cols-2 gap-4 [&>div]:min-w-0 [&_input]:min-w-0 [&_input]:w-full">{{ form_row(pairForm.weekdayStart) }}{{ form_row(pairForm.weekdayEnd) }}</div></fieldset>
+            <fieldset><legend>Вихідні</legend><div data-ui="schedule-pair-times" class="grid grid-cols-2 gap-4 [&>div]:min-w-0 [&_input]:min-w-0 [&_input]:w-full">{{ form_row(pairForm.weekendStart) }}{{ form_row(pairForm.weekendEnd) }}</div></fieldset>
+            <div data-ui="schedule-actions" class="mt-6 flex flex-wrap items-center gap-3"><button data-ui="schedule-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">Зберегти пару</button><a href="{{ path(returnRoute, query) }}" data-action="schedule-dialog#close">Скасувати</a></div>
         {{ form_end(pairForm) }}
     </dialog>
     </turbo-frame>
