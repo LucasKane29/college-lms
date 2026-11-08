@@ -427,6 +427,7 @@ class SecurityTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('aside');
             self::assertSelectorNotExists('#workspace-navigation');
+            self::assertSelectorExists('head link[rel="stylesheet"][href^="/assets/styles/app-"][data-turbo-track="reload"]');
         }
         $this->client->request('GET', '/student/group');
         self::assertResponseRedirects('/login');
