@@ -10,6 +10,7 @@ use App\Repository\DisciplineRepository;
 use App\Repository\GroupRepository;
 use App\Repository\UserRepository;
 use App\Security\DisciplineVoter;
+use App\Security\LessonVoter;
 use App\Security\UserRole;
 use App\Service\ScheduleManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -59,7 +60,7 @@ class TeacherDisciplineController extends AbstractController
         $discipline = $disciplines->find($id) ?? throw $this->createNotFoundException();
         $this->denyAccessUnlessGranted(DisciplineVoter::VIEW, $discipline);
 
-        $topicForm = $this->isGranted(DisciplineVoter::MANAGE, $discipline)
+        $topicForm = $this->isGranted(LessonVoter::EDIT, $discipline)
             ? $this->createForm(LessonTopicType::class, (new LessonTopic())->setDiscipline($discipline), [
                 'action' => $this->generateUrl('app_teacher_discipline_topic_new', ['id' => $id]),
             ]) : null;
@@ -74,7 +75,8 @@ class TeacherDisciplineController extends AbstractController
     #[Route('/disciplines/{id}/topics/new', name: 'app_teacher_discipline_topic_new', requirements: ['id' => '\\d+'], methods: ['POST'])]
     public function createTopic(int $id, Request $request, DisciplineRepository $disciplines, ScheduleManager $schedule, EntityManagerInterface $manager): Response
     {
-        $discipline = $this->managedDiscipline($id, $disciplines);
+        $discipline = $disciplines->find($id) ?? throw $this->createNotFoundException();
+        $this->denyAccessUnlessGranted(LessonVoter::EDIT, $discipline);
         $topic = (new LessonTopic())->setDiscipline($discipline);
         $form = $this->createForm(LessonTopicType::class, $topic, [
             'action' => $this->generateUrl('app_teacher_discipline_topic_new', ['id' => $id]),
@@ -83,7 +85,7 @@ class TeacherDisciplineController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $manager->persist($topic);
             $manager->flush();
-            $this->addFlash('success', 'Тему додано до каталогу дисципліни.');
+            $this->addFlash('success', 'Заняття додано до каталогу дисципліни.');
 
             return $this->redirectToRoute('app_teacher_discipline_show', ['id' => $id], Response::HTTP_SEE_OTHER);
         }

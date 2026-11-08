@@ -1,0 +1,17 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Заняття · College LMS{% endblock %}
+{% block admin_content %}
+    <h1>Заняття</h1>
+    <p class="my-4 text-slate-500">Матеріали занять і тестування. Занять: {{ total }}.</p>
+    {% if app.user.role.value in ['ROLE_TEACHER', 'ROLE_ADMIN'] %}<p class="mb-5"><a href="{{ path('app_teacher_disciplines') }}">Перейти до дисципліни й створити заняття</a></p>{% endif %}
+    <div class="grid gap-4 md:grid-cols-2">
+        {% for lesson in lessons %}
+            <article class="rounded-xl border border-slate-200 bg-white p-5" data-lesson-id="{{ lesson.id }}">
+                <p class="text-sm text-slate-500">{{ lesson.discipline.name }}</p>
+                <h2><a href="{{ path('app_lesson_show', {id: lesson.id}) }}">{{ lesson.name }}</a></h2>
+                <p class="text-sm text-slate-500">{{ lesson.discipline.teacherNames }}</p>
+            </article>
+        {% else %}<p class="rounded-xl bg-white p-6 text-slate-500">Доступних занять поки немає.</p>{% endfor %}
+    </div>
+    {% include 'curator/_pagination.html.twig' with {route: 'app_lessons'} %}
+{% endblock %}

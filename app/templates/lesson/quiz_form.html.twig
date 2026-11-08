@@ -1,0 +1,19 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Редактор тесту · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_lesson_show', {id: lesson.id}) }}">← {{ lesson.name }}</a><h1>Редактор тесту</h1>
+    <p class="my-4 text-slate-500">Позначте правильні відповіді. За запитання нараховуються всі бали лише за точний набір відповідей.</p>
+    <div class="max-w-4xl rounded-xl border border-slate-200 bg-white p-6">
+        {{ form_start(quizForm) }}
+        {{ form_errors(quizForm) }}{{ form_row(quizForm.title) }}{{ form_row(quizForm.description) }}{{ form_row(quizForm.maxAttempts) }}{{ form_row(quizForm.published) }}
+        <h2>Запитання</h2>{{ form_errors(quizForm.questions) }}
+        {% set questionPrototype %}{% include 'lesson/_question_form.html.twig' with {question: quizForm.questions.vars.prototype} only %}{% endset %}
+        <div data-controller="form-collection" data-form-collection-placeholder-value="__question__" data-form-collection-index-value="{{ quizForm.questions|length ? max(quizForm.questions|keys) + 1 : 0 }}" data-form-collection-prototype-value="{{ questionPrototype|e('html_attr') }}">
+            <div class="space-y-5" data-form-collection-target="list">{% for question in quizForm.questions %}{% include 'lesson/_question_form.html.twig' with {question: question} only %}{% endfor %}</div>
+            <button type="button" class="mt-4 font-semibold text-blue-700" data-action="form-collection#add">+ Додати запитання</button>
+        </div>
+        {% do quizForm.questions.setRendered %}
+        <button class="mt-6 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700" type="submit">Зберегти тест</button>
+        {{ form_end(quizForm) }}
+    </div>
+{% endblock %}

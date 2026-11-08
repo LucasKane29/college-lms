@@ -10,7 +10,7 @@
             {{ form_start(lessonForm, {attr: {'data-turbo-frame': '_top'}}) }}
                 <div role="alert">{{ form_errors(lessonForm) }}</div>
                 {{ form_row(lessonForm.discipline) }}
-                <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Тему заняття призначає лише викладач дисципліни.</p>
+                <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Заняття призначає лише викладач дисципліни.</p>
                 <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">У списку — дисципліни, призначені цій групі. Якщо список порожній, спочатку додайте групу до дисципліни.</p>
                 <div data-ui="schedule-actions" class="mt-6 flex flex-wrap items-center gap-3"><button data-ui="schedule-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">Зберегти заняття</button><a href="{{ path(returnRoute, query) }}" data-action="schedule-dialog#close">Скасувати</a></div>
             {{ form_end(lessonForm) }}

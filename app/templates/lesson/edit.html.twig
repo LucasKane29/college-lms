@@ -1,0 +1,9 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Редагування заняття · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_lesson_show', {id: lesson.id}) }}">← До заняття</a>
+    <h1>Редагування заняття</h1>
+    <div class="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-6">
+        {{ form_start(lessonForm) }}{{ form_widget(lessonForm) }}<button class="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700" type="submit">Зберегти заняття</button>{{ form_end(lessonForm) }}
+    </div>
+{% endblock %}

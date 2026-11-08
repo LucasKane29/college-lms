@@ -89,7 +89,7 @@ final class ScheduleManager
     {
         $discipline = $lesson->getDiscipline();
         if (null !== $lesson->getTopic() && $lesson->getTopic()->getDiscipline() !== $discipline) {
-            return 'Оберіть тему, що належить вибраній дисципліні.';
+            return 'Оберіть заняття, що належить вибраній дисципліні.';
         }
         if (!$discipline || !$discipline->getGroups()->contains($lesson->getGroup())) {
             return 'Оберіть дисципліну, призначену цій групі.';

@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}{{ lesson.name }} · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_lessons') }}">← Заняття</a>
+    <h1>{{ lesson.name }}</h1>
+    <p class="my-3 text-slate-500">{{ lesson.discipline.name }} · {{ lesson.discipline.teacherNames }}</p>
+    {% if lesson.description %}<div class="my-5 whitespace-pre-wrap wrap-anywhere rounded-xl bg-white p-5">{{ lesson.description }}</div>{% endif %}
+    {% if is_granted('LESSON_EDIT', lesson) %}
+        <div class="my-5 flex flex-wrap gap-4">
+            <a href="{{ path('app_lesson_edit', {id: lesson.id}) }}">Редагувати заняття</a>
+            <a href="{{ path('app_lesson_material_new', {id: lesson.id}) }}">Додати матеріал</a>
+            <a href="{{ path('app_lesson_quiz_new', {lessonId: lesson.id}) }}">Створити тест</a>
+        </div>
+    {% endif %}
+    <h2>Матеріали</h2>
+    <div class="space-y-4">
+        {% for material in materials %}
+            <article class="rounded-xl border border-slate-200 bg-white p-5" data-material-id="{{ material.id }}">
+                <h3 class="mb-3 text-lg font-semibold">{{ material.title }}</h3>
+                {% if material.kind == 'note' %}<div class="whitespace-pre-wrap wrap-anywhere leading-relaxed">{{ material.content }}</div>
+                {% elseif material.kind == 'link' %}<a href="{{ material.url }}" target="_blank" rel="noopener noreferrer">{{ material.url }}</a>
+                {% elseif material.kind == 'file' %}<a href="{{ path('app_lesson_material_download', {id: material.id}) }}" data-turbo="false">Завантажити {{ material.originalName }}</a>{% endif %}
+                {% if is_granted('LESSON_EDIT', lesson) %}
+                    <div class="mt-4 flex items-center gap-4"><a href="{{ path('app_lesson_material_edit', {materialId: material.id}) }}">Редагувати матеріал</a>
+                        <form method="post" action="{{ path('app_lesson_material_delete', {id: material.id}) }}" data-turbo-confirm="Видалити матеріал?">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_material_' ~ material.id) }}"><button class="text-red-700" type="submit">Видалити матеріал</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </article>
+        {% else %}<p class="text-slate-500">Матеріали ще не додано.</p>{% endfor %}
+    </div>
+    <h2>Тестування</h2>
+    <div class="space-y-3">
+        {% for quiz in quizzes %}
+            <article class="rounded-xl border border-slate-200 bg-white p-5" data-quiz-id="{{ quiz.id }}">
+                <a class="font-semibold" href="{{ path('app_lesson_quiz_show', {id: quiz.id}) }}">{{ quiz.title }}</a>
+                {% if not quiz.published %}<span class="ml-2 rounded bg-slate-100 px-2 py-1 text-xs">Чернетка</span>{% endif %}
+                <p class="mt-2 text-sm text-slate-500">Дозволено спроб: {{ quiz.maxAttempts }}</p>
+            </article>
+        {% else %}<p class="text-slate-500">Доступних тестів ще немає.</p>{% endfor %}
+    </div>
+{% endblock %}

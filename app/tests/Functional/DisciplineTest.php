@@ -324,16 +324,20 @@ class DisciplineTest extends WebTestCase
         $this->client->request('GET', $url);
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('a[href="'.$url.'/edit"]');
-        self::assertSelectorNotExists('form[name="lesson_topic"]');
+        self::assertSelectorExists('form[name="lesson_topic"]');
         $this->client->request('GET', $url.'/edit');
         self::assertResponseStatusCodeSame(403);
         $this->client->request('POST', $url.'/edit', ['discipline' => ['name' => 'Підміна']]);
         self::assertResponseStatusCodeSame(403);
         $this->client->request('POST', $url.'/topics/new', ['lesson_topic' => ['name' => 'Підміна']]);
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(422);
+        $this->client->request('GET', $url);
+        $this->client->submitForm('Додати заняття', ['lesson_topic[name]' => 'Створив викладач']);
+        self::assertResponseStatusCodeSame(303);
+        self::assertNotNull($this->manager()->getRepository(LessonTopic::class)->findOneBy(['name' => 'Створив викладач']));
     }
 
-    public function testHeadTeacherCanManageTopicsAndSeeScheduleForLinkedGroups(): void
+    public function testAdminCanManageTopicsAndSeeScheduleForLinkedGroups(): void
     {
         $teacher = $this->user('teacher@example.com', UserRole::Teacher);
         $curator = $this->user('curator@example.com', UserRole::Curator);
@@ -346,13 +350,13 @@ class DisciplineTest extends WebTestCase
         $this->manager()->persist($pair);
         $this->manager()->flush();
         $url = '/teacher/disciplines/'.$discipline->getId();
-        $this->client->loginUser($this->user('head@example.com', UserRole::HeadTeacher));
+        $this->client->loginUser($this->user('content-admin@example.com', UserRole::Admin));
         $this->client->request('GET', '/teacher/disciplines');
         self::assertResponseIsSuccessful();
         self::assertSelectorCount(2, 'tr[data-discipline-id]');
         $this->client->request('GET', $url);
         self::assertSelectorExists('a[href="'.$url.'/edit"]');
-        $this->client->submitForm('Додати тему', ['lesson_topic[name]' => '  Похідна функції  ']);
+        $this->client->submitForm('Додати заняття', ['lesson_topic[name]' => '  Похідна функції  ']);
         self::assertResponseRedirects($url, 303);
         $manager = $this->manager();
         $topic = $manager->getRepository(LessonTopic::class)->findOneBy(['name' => 'Похідна функції']);
@@ -372,11 +376,11 @@ class DisciplineTest extends WebTestCase
         self::assertSelectorTextContains('tr[data-lesson-id]:first-child', '09:00–11:00');
         self::assertSelectorTextContains('tr[data-lesson-id]:first-child', 'Похідна функції');
         self::assertSelectorTextContains('tr[data-lesson-id]:last-child', 'КН-22');
-        self::assertSelectorTextContains('tr[data-lesson-id]:last-child', 'Тему ще не обрано');
+        self::assertSelectorTextContains('tr[data-lesson-id]:last-child', 'Заняття ще не обрано');
         self::assertSelectorTextNotContains('tbody', 'Не пов’язана');
-        $this->client->submitForm('Додати тему', ['lesson_topic[name]' => '   ']);
+        $this->client->submitForm('Додати заняття', ['lesson_topic[name]' => '   ']);
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('main', 'Вкажіть тему заняття.');
+        self::assertSelectorTextContains('main', 'Вкажіть назву заняття.');
         $this->client->request('GET', '/teacher/disciplines/new');
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('select[name="discipline[teachers][]"][multiple]');

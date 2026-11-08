@@ -12,7 +12,7 @@ class LessonTopicType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('name', TextType::class, ['label' => 'Нова тема заняття', 'empty_data' => '', 'attr' => ['maxlength' => 255]]);
+        $builder->add('name', TextType::class, ['label' => 'Нове заняття', 'empty_data' => '', 'attr' => ['maxlength' => 255]]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

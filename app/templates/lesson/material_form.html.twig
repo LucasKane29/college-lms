@@ -1,0 +1,11 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Матеріал заняття · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_lesson_show', {id: lesson.id}) }}">← {{ lesson.name }}</a>
+    <h1>{{ material.id ? 'Редагування матеріалу' : 'Новий матеріал' }}</h1>
+    <p class="my-4 text-slate-500">Для конспекту введіть текст, для посилання — URL, для файлу — завантажте документ.</p>
+    {% if material.originalName %}<p class="mb-4 text-sm">Поточний файл: {{ material.originalName }}</p>{% endif %}
+    <div class="max-w-3xl rounded-xl border border-slate-200 bg-white p-6">
+        {{ form_start(materialForm) }}{{ form_widget(materialForm) }}<button class="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700" type="submit">Зберегти матеріал</button>{{ form_end(materialForm) }}
+    </div>
+{% endblock %}

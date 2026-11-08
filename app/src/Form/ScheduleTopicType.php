@@ -15,8 +15,8 @@ final class ScheduleTopicType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('topic', EntityType::class, [
-            'class' => LessonTopic::class, 'label' => 'Тема заняття', 'choice_label' => 'name',
-            'required' => false, 'placeholder' => 'Тему ще не обрано',
+            'class' => LessonTopic::class, 'label' => 'Заняття', 'choice_label' => 'name',
+            'required' => false, 'placeholder' => 'Заняття ще не обрано',
             'query_builder' => static fn (EntityRepository $repository) => $repository->createQueryBuilder('topic')
                 ->where('topic.discipline = :discipline')->setParameter('discipline', $options['discipline'])->orderBy('topic.id', 'ASC'),
         ]);

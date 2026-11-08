@@ -2,11 +2,13 @@
 {% block body %}
     {% set roleMenus = {
         ROLE_STUDENT: [
+            {label: 'Заняття', route: 'app_lessons', icon: 'book'},
             {label: 'Моя група', route: 'app_student_group', icon: 'group'},
             {label: 'Мої дисципліни', route: 'app_student_disciplines', icon: 'book'},
             {label: 'Мої викладачі', route: 'app_student_teachers', icon: 'teacher'}
         ],
         ROLE_TEACHER: [
+            {label: 'Заняття', route: 'app_lessons', icon: 'book'},
             {label: 'Розклад', route: 'app_schedule', icon: 'book'},
             {label: 'Мої групи', route: 'app_teacher_groups', icon: 'group'},
             {label: 'Мої дисципліни', route: 'app_teacher_disciplines', icon: 'book'}
@@ -16,6 +18,7 @@
             {label: 'Усі студенти', route: 'app_curator_students', icon: 'users'}
         ],
         ROLE_HEAD_TEACHER: [
+            {label: 'Заняття', route: 'app_lessons', icon: 'book'},
             {label: 'Розклад', route: 'app_schedule', icon: 'book'},
             {label: 'Дисципліни', route: 'app_teacher_disciplines', icon: 'book'}
         ],
@@ -23,6 +26,7 @@
             {label: 'Розклад', route: 'app_schedule', icon: 'book'}
         ],
         ROLE_ADMIN: [
+            {label: 'Заняття', route: 'app_lessons', icon: 'book'},
             {label: 'Розклад', route: 'app_schedule', icon: 'book'},
             {label: 'Користувачі', route: 'app_admin_users', icon: 'users'},
             {label: 'Групи', route: 'app_curator_groups', icon: 'group'},
@@ -43,7 +47,7 @@
             </div>
             <ul id="workspace-menu" data-ui="workspace-menu" class="grid list-none gap-1.5">
                 {% for item in menu %}
-                    {% set active = currentRoute == item.route or (item.route == 'app_admin_users' and currentRoute == 'app_admin_user_role') or (item.route == 'app_curator_groups' and currentRoute in ['app_curator_group_new', 'app_curator_group_show']) or (item.route == 'app_curator_students' and currentRoute == 'app_curator_student_assign') or (item.route == 'app_teacher_disciplines' and currentRoute in ['app_teacher_discipline_new', 'app_teacher_discipline_show', 'app_teacher_discipline_edit']) %}
+                    {% set active = currentRoute == item.route or (item.route == 'app_lessons' and currentRoute starts with 'app_lesson_') or (item.route == 'app_admin_users' and currentRoute == 'app_admin_user_role') or (item.route == 'app_curator_groups' and currentRoute in ['app_curator_group_new', 'app_curator_group_show']) or (item.route == 'app_curator_students' and currentRoute == 'app_curator_student_assign') or (item.route == 'app_teacher_disciplines' and currentRoute in ['app_teacher_discipline_new', 'app_teacher_discipline_show', 'app_teacher_discipline_edit']) %}
                     <li>
                         <a href="{{ path(item.route) }}" data-ui="workspace-menu-link" class="flex min-h-12 w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm leading-normal text-slate-300 hover:bg-slate-800 hover:text-white aria-[current]:bg-blue-600 aria-[current]:text-white" title="{{ item.label }}" aria-label="{{ item.label }}"{% if active %} aria-current="{{ currentRoute == item.route ? 'page' : 'location' }}"{% endif %}>
                             {% include 'layouts/_menu_icon.html.twig' with {icon: item.icon} only %}

@@ -15,7 +15,7 @@
     {% set weekdays = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя'] %}
     <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white" role="region" aria-label="Розклад дисципліни" tabindex="0">
         <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
-            <thead><tr><th scope="col">Дата</th><th scope="col">День тижня</th><th scope="col">Група</th><th scope="col">Пара</th><th scope="col">Час</th><th scope="col">Тема заняття</th></tr></thead>
+            <thead><tr><th scope="col">Дата</th><th scope="col">День тижня</th><th scope="col">Група</th><th scope="col">Пара</th><th scope="col">Час</th><th scope="col">Заняття</th></tr></thead>
             <tbody>
                 {% for lesson in lessons %}
                     <tr data-lesson-id="{{ lesson.id }}">
@@ -23,21 +23,21 @@
                         <td>{{ weekdays[lesson.lessonDate|date('N') - 1] }}</td>
                         <td>{{ lesson.group.name }}</td><td>{{ lesson.pair.number }}</td>
                         <td>{{ lesson.pair.startOn(lesson.lessonDate)|date('H:i') }}–{{ lesson.pair.endOn(lesson.lessonDate)|date('H:i') }}</td>
-                        <td>{{ lesson.topic ? lesson.topic.name : 'Тему ще не обрано' }}</td>
+                        <td>{{ lesson.topic ? lesson.topic.name : 'Заняття ще не обрано' }}</td>
                     </tr>
                 {% else %}<tr><td colspan="6" data-ui="admin-empty" class="px-4! py-12! text-center text-slate-500">Для пов’язаних груп ще немає занять із цієї дисципліни.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
     {% include 'curator/_pagination.html.twig' with {route: 'app_teacher_discipline_show', query: {id: discipline.id}} %}
-    <h2>Каталог тем</h2>
+    <h2>Каталог занять</h2>
     <ol>
-        {% for topic in topics %}<li data-topic-id="{{ topic.id }}">{{ topic.name }}</li>{% else %}<li>Тем ще немає.</li>{% endfor %}
+        {% for topic in topics %}<li data-topic-id="{{ topic.id }}"><a href="{{ path('app_lesson_show', {id: topic.id}) }}">{{ topic.name }}</a></li>{% else %}<li>Занять ще немає.</li>{% endfor %}
     </ol>
     {% if topicForm %}
         {{ form_start(topicForm) }}
             {{ form_row(topicForm.name) }}
-            <button data-ui="admin-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">Додати тему</button>
+            <button data-ui="admin-button" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60" type="submit">Додати заняття</button>
         {{ form_end(topicForm) }}
     {% endif %}
 {% endblock %}

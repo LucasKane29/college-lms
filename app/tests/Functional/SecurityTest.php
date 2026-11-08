@@ -380,12 +380,12 @@ class SecurityTest extends WebTestCase
         self::assertSelectorExists('button[aria-controls="workspace-menu"][aria-expanded="true"]');
         self::assertSelectorExists('[data-ui~="workspace-menu"] a[href="/account"][aria-current="page"]');
         $expected = match ($role) {
-            UserRole::Student => ['/account', '/student/group', '/student/disciplines', '/student/teachers'],
-            UserRole::Teacher => ['/account', '/schedule', '/teacher/groups', '/teacher/disciplines'],
+            UserRole::Student => ['/account', '/lessons', '/student/group', '/student/disciplines', '/student/teachers'],
+            UserRole::Teacher => ['/account', '/lessons', '/schedule', '/teacher/groups', '/teacher/disciplines'],
             UserRole::Curator => ['/account', '/curator/groups', '/curator/students'],
-            UserRole::HeadTeacher => ['/account', '/schedule', '/teacher/disciplines'],
+            UserRole::HeadTeacher => ['/account', '/lessons', '/schedule', '/teacher/disciplines'],
             UserRole::Director => ['/account', '/schedule'],
-            UserRole::Admin => ['/account', '/schedule', '/admin/users', '/curator/groups', '/curator/students', '/teacher/disciplines'],
+            UserRole::Admin => ['/account', '/lessons', '/schedule', '/admin/users', '/curator/groups', '/curator/students', '/teacher/disciplines'],
             default => ['/account'],
         };
         $actual = $this->client->getCrawler()->filter('[data-ui~="workspace-menu"] a')->each(

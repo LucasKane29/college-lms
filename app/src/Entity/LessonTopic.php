@@ -18,9 +18,16 @@ class LessonTopic
     private Discipline $discipline;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: 'Вкажіть тему заняття.')]
-    #[Assert\Length(max: 255, maxMessage: 'Тема має містити до {{ limit }} символів.')]
+    #[Assert\NotBlank(message: 'Вкажіть назву заняття.')]
+    #[Assert\Length(max: 255, maxMessage: 'Назва заняття має містити до {{ limit }} символів.')]
     private string $name = '';
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Assert\Length(max: 20000)]
+    private ?string $description = null;
+
+    public function getDescription(): ?string { return $this->description; }
+    public function setDescription(?string $description): static { $this->description = $description; return $this; }
 
     public function getId(): ?int { return $this->id; }
     public function getDiscipline(): Discipline { return $this->discipline; }

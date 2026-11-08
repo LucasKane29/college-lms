@@ -153,7 +153,7 @@ class ScheduleController extends AbstractController
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             if ($schedule->assignTopic($lesson, $form->get('topic')->getData(), $this->getUser())) {
-                $this->addFlash('success', 'Тему заняття збережено.');
+                $this->addFlash('success', 'Заняття збережено.');
                 if ($request->headers->get('Turbo-Frame') === 'schedule-modal') {
                     return new Response('<turbo-stream action="update" target="schedule-modal"><template></template></turbo-stream><turbo-stream action="refresh"></turbo-stream>', headers: ['Content-Type' => 'text/vnd.turbo-stream.html']);
                 }

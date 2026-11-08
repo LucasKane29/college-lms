@@ -1,0 +1,19 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}{{ quiz.title }} · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_lesson_show', {id: lesson.id}) }}">← {{ lesson.name }}</a><h1>{{ quiz.title }}</h1>
+    {% if quiz.description %}<p class="my-4 whitespace-pre-wrap wrap-anywhere">{{ quiz.description }}</p>{% endif %}
+    <p class="my-4 text-slate-500">Запитань: {{ quiz.questions|length }} · Спроб для студента: {{ quiz.maxAttempts }} · {{ quiz.published ? 'Опубліковано' : 'Чернетка' }}</p>
+    {% if is_granted('LESSON_EDIT', lesson) %}<p class="my-4"><a href="{{ path('app_lesson_quiz_edit', {id: quiz.id}) }}">Редагувати тест</a></p>{% endif %}
+    {% if app.user.role.value == 'ROLE_STUDENT' and attempts|length < quiz.maxAttempts %}<a class="my-4 inline-flex rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white! hover:bg-blue-700" href="{{ path('app_lesson_quiz_take', {id: quiz.id}) }}">Пройти тест</a>{% endif %}
+    {% if app.user.role.value != 'ROLE_STUDENT' %}
+        <h2>Запитання та правильні відповіді</h2>
+        {% for question in quiz.questions %}<section class="my-3 rounded-xl bg-white p-5"><h3 class="font-semibold">{{ question.text }}</h3><ul class="mt-3 space-y-2">{% for answer in question.answers %}<li>{{ answer.text }}{% if answer.correct %}<span class="ml-2 font-semibold text-emerald-700">✓ Правильна</span>{% endif %}</li>{% endfor %}</ul></section>{% endfor %}
+    {% endif %}
+    <h2>{{ app.user.role.value == 'ROLE_STUDENT' ? 'Мої результати' : 'Результати студентів' }}</h2>
+    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table class="w-full text-left text-sm [&_th]:bg-slate-100 [&_th]:p-3 [&_td]:border-t [&_td]:border-slate-200 [&_td]:p-3"><thead><tr><th>Студент</th><th>Спроба</th><th>Результат</th><th>Здано</th></tr></thead><tbody>
+            {% for attempt in attempts %}<tr data-attempt-id="{{ attempt.id }}"><td>{{ attempt.student.fullName }}</td><td><a href="{{ path('app_lesson_quiz_result', {id: attempt.id}) }}">{{ attempt.number }}</a></td><td>{{ attempt.score }}/{{ attempt.maxScore }} ({{ attempt.percent }}%)</td><td>{{ attempt.submittedAt|date('d.m.Y H:i', 'Europe/Kyiv') }}</td></tr>{% else %}<tr><td colspan="4">Спроб ще немає.</td></tr>{% endfor %}
+        </tbody></table>
+    </div>
+{% endblock %}

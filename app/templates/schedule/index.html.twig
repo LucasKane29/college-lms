@@ -37,11 +37,11 @@
             </div>
         {% endif %}
         {% if is_granted('ROLE_HEAD_TEACHER') %}
-            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Натисніть порожню клітинку, щоб додати заняття, або заповнену — щоб змінити дисципліну чи видалити заняття. Тему призначає викладач дисципліни. Клітинки інших дисциплін позначено як зайняті.</p>
+            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Натисніть порожню клітинку, щоб додати заняття, або заповнену — щоб змінити дисципліну чи видалити заняття. Заняття призначає викладач дисципліни. Клітинки інших дисциплін позначено як зайняті.</p>
         {% elseif app.user.role.value == 'ROLE_TEACHER' %}
-            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Натисніть своє заняття, щоб призначити або змінити тему. Дату, групу, пару та дисципліну змінюють завуч або адміністратор.</p>
+            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Натисніть своє заняття, щоб призначити або змінити заняття. Дату, групу, пару та дисципліну змінюють завуч або адміністратор.</p>
         {% else %}
-            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Перегляд розкладу та призначених тем занять.</p>
+            <p data-ui="schedule-hint" class="my-3.5 text-[13px] leading-relaxed text-slate-500">Перегляд розкладу та призначених занять.</p>
         {% endif %}
         {% if groups and pairs %}{% for day in tableDays %}{% include 'schedule/_day.html.twig' %}{% endfor %}{% endif %}
     </section>

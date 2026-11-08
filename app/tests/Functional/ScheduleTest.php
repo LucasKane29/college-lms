@@ -155,7 +155,7 @@ class ScheduleTest extends WebTestCase
         $token = $this->client->getCrawler()->filter('input[name="schedule_topic[_token]"]')->attr('value');
         $this->client->request('POST', '/schedule/'.$lessonId.'/topic', ['schedule_topic' => ['topic' => $otherId, '_token' => $token]]);
         self::assertResponseStatusCodeSame(422);
-        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => $topicId]);
+        $this->client->submitForm('Зберегти заняття', ['schedule_topic[topic]' => $topicId]);
         self::assertResponseStatusCodeSame(303);
         $this->manager()->clear();
         $saved = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId]);
@@ -291,12 +291,12 @@ class ScheduleTest extends WebTestCase
         $this->client->request('GET', '/schedule/'.$id.'/topic?from=2026-10-24&to=2026-10-24&view=schedule');
         self::assertSelectorExists('turbo-frame#schedule-modal dialog[aria-labelledby="topic-title"]');
         self::assertSelectorExists('form[data-turbo-frame="schedule-modal"]');
-        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => $topicId]);
+        $this->client->submitForm('Зберегти заняття', ['schedule_topic[topic]' => $topicId]);
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('turbo-stream[action="refresh"]');
         $this->client->request('GET', '/schedule/'.$id.'/topic');
         self::assertSelectorExists('option[value="'.$topicId.'"][selected]');
-        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => '']);
+        $this->client->submitForm('Зберегти заняття', ['schedule_topic[topic]' => '']);
         self::assertResponseIsSuccessful();
         $this->manager()->clear();
         self::assertNull($this->manager()->find(Schedule::class, $id)->getTopic());
@@ -508,7 +508,7 @@ class ScheduleTest extends WebTestCase
         self::assertSelectorTextContains('[data-ui~="schedule-cell"][data-ui~="filled"]', 'Математика');
         self::assertSelectorTextContains('[data-ui~="schedule-cell"][data-ui~="filled"]', 'co-teacher@example.com');
         $this->client->request('GET', '/schedule/'.$id.'/topic');
-        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => $topicId]);
+        $this->client->submitForm('Зберегти заняття', ['schedule_topic[topic]' => $topicId]);
         self::assertResponseStatusCodeSame(303);
         $this->manager()->clear();
         self::assertSame($topicId, $this->manager()->find(Schedule::class, $id)->getTopic()->getId());
