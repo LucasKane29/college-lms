@@ -97,7 +97,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             return ['teachers' => [], 'total' => 0, 'page' => 1, 'pages' => 1];
         }
         $query = $this->createQueryBuilder('u')->distinct()
-            ->innerJoin(Discipline::class, 'discipline', 'WITH', 'discipline.teacher = u')
+            ->innerJoin(Discipline::class, 'discipline', 'WITH', 'u MEMBER OF discipline.teachers')
             ->innerJoin('discipline.groups', 'studentGroup')
             ->where('studentGroup = :group')->setParameter('group', $group);
         $total = (int) (clone $query)->select('COUNT(DISTINCT u.id)')->getQuery()->getSingleScalarResult();

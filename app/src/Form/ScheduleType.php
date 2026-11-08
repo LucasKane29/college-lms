@@ -17,9 +17,9 @@ class ScheduleType extends AbstractType
     {
         $builder->add('discipline', EntityType::class, [
             'class' => Discipline::class, 'label' => 'Дисципліна', 'placeholder' => 'Оберіть дисципліну',
-            'choice_label' => static fn (Discipline $discipline) => $discipline->getName().' — '.$discipline->getTeacher()->getFullName(),
+            'choice_label' => static fn (Discipline $discipline) => $discipline->getName().' — '.$discipline->getTeacherNames(),
             'query_builder' => static fn (EntityRepository $repository) => $repository->createQueryBuilder('d')
-                ->join('d.groups', 'g')->join('d.teacher', 't')->addSelect('t')->where('g = :group')->setParameter('group', $options['group'])
+                ->join('d.groups', 'g')->leftJoin('d.teachers', 't')->addSelect('t')->where('g = :group')->setParameter('group', $options['group'])
                 ->orderBy('d.name', 'ASC')->addOrderBy('d.id', 'ASC'),
         ]);
     }

@@ -8,7 +8,7 @@
                 <label>Початкова дата<input type="date" name="from" value="{{ from|date('Y-m-d') }}" required></label>
                 <label>Кінцева дата<input type="date" name="to" value="{{ to|date('Y-m-d') }}" required></label>
                 <label>Дисципліна<select name="discipline"><option value="">Усі дисципліни</option>
-                    {% for discipline in disciplines %}<option value="{{ discipline.id }}"{% if selectedDiscipline and selectedDiscipline.id == discipline.id %} selected{% endif %}>{{ discipline.name }} — {{ discipline.teacher.fullName }}</option>{% endfor %}
+                    {% for discipline in disciplines %}<option value="{{ discipline.id }}"{% if selectedDiscipline and selectedDiscipline.id == discipline.id %} selected{% endif %}>{{ discipline.name }} — {{ discipline.teacherNames }}</option>{% endfor %}
                 </select></label>
                 <label>Група<select name="group"><option value="">Усі групи</option>
                     {% for group in allGroups %}<option value="{{ group.id }}"{% if selectedGroup and selectedGroup.id == group.id %} selected{% endif %}>{{ group.name }}</option>{% endfor %}

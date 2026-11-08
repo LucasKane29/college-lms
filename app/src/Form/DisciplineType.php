@@ -4,6 +4,8 @@ namespace App\Form;
 
 use App\Entity\Discipline;
 use App\Entity\Group;
+use App\Entity\User;
+use App\Repository\UserRepository;
 use App\Repository\GroupRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -16,6 +18,18 @@ class DisciplineType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        if ($options['manage_teachers']) {
+            $builder->add('teachers', EntityType::class, [
+                'class' => User::class, 'label' => 'Викладачі',
+                'choice_label' => static fn (User $user): string => $user->getFullName().' — '.$user->getEmail(),
+                'query_builder' => static fn (UserRepository $users) => $users->createQueryBuilder('u')
+                    ->where("u.roles LIKE :role ESCAPE '!'")->setParameter('role', '%"ROLE!_TEACHER"%')
+                    ->orderBy('u.fullName', 'ASC')->addOrderBy('u.id', 'ASC'),
+                'multiple' => true, 'expanded' => false, 'by_reference' => false,
+                'attr' => ['size' => 6],
+                'help' => 'Оберіть одного або кількох викладачів. Для вибору кількох утримуйте Ctrl (Cmd на macOS).',
+            ]);
+        }
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Назва дисципліни', 'empty_data' => '', 'attr' => ['maxlength' => 150],
@@ -34,6 +48,7 @@ class DisciplineType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults(['data_class' => Discipline::class, 'csrf_token_id' => 'discipline']);
+        $resolver->setDefaults(['data_class' => Discipline::class, 'csrf_token_id' => 'discipline', 'manage_teachers' => false]);
+        $resolver->setAllowedTypes('manage_teachers', 'bool');
     }
 }

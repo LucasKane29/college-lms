@@ -38,13 +38,13 @@ class ScheduleController extends AbstractController
         $discipline = isset($input['discipline']) ? ($manager->find(Discipline::class, $input['discipline']) ?? throw $this->createNotFoundException()) : null;
         $teacher = UserRole::Teacher === $this->getUser()->getRole() ? $this->getUser() : null;
         if ($teacher && (($group && !in_array($group, $allGroups, true))
-            || ($discipline && $discipline->getTeacher()->getId() !== $teacher->getId()))) {
+            || ($discipline && !$discipline->hasTeacher($teacher)))) {
             throw $this->createAccessDeniedException();
         }
         $disciplines = $manager->getRepository(Discipline::class)->createQueryBuilder('d')
-            ->join('d.teacher', 'teacher')->addSelect('teacher')->orderBy('d.name', 'ASC')->addOrderBy('d.id', 'ASC');
+            ->leftJoin('d.teachers', 'teacher')->addSelect('teacher')->orderBy('d.name', 'ASC')->addOrderBy('d.id', 'ASC');
         if ($teacher) {
-            $disciplines->andWhere('d.teacher = :teacher')->setParameter('teacher', $teacher);
+            $disciplines->andWhere(':teacher MEMBER OF d.teachers')->setParameter('teacher', $teacher);
         }
         $groups = $group ? [$group] : $allGroups;
         $grid = $counts = [];

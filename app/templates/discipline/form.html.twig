@@ -8,6 +8,7 @@
             {% if disciplineForm.vars.errors|length %}<div role="alert">{{ form_errors(disciplineForm) }}</div>{% endif %}
             <div data-ui="admin-field" class="mb-3">{{ form_row(disciplineForm.name) }}</div>
             <div data-ui="admin-field" class="mb-3">{{ form_row(disciplineForm.description) }}</div>
+            {% if disciplineForm.teachers is defined %}<div data-ui="admin-field" class="mb-3">{{ form_row(disciplineForm.teachers) }}</div>{% endif %}
             <fieldset data-ui="discipline-group-choices" class="my-5 [&_legend]:mb-2 [&_legend]:font-semibold">
                 <legend>Закріпити за групами</legend>
                 {{ form_errors(disciplineForm.groups) }}

@@ -22,7 +22,7 @@ class DisciplineRepository extends ServiceEntityRepository
     {
         $query = $this->listQuery();
         if (!$admin) {
-            $query->andWhere('d.teacher = :teacher')->setParameter('teacher', $teacher);
+            $query->andWhere(':teacher MEMBER OF d.teachers')->setParameter('teacher', $teacher);
         }
 
         return $this->paginate($query, $page);
@@ -39,7 +39,7 @@ class DisciplineRepository extends ServiceEntityRepository
 
     private function listQuery(): QueryBuilder
     {
-        return $this->createQueryBuilder('d')->leftJoin('d.teacher', 'teacher')->addSelect('teacher')
+        return $this->createQueryBuilder('d')->leftJoin('d.teachers', 'teacher')->addSelect('teacher')
             ->leftJoin('d.groups', 'groups')->addSelect('groups')->orderBy('d.name', 'ASC')->addOrderBy('d.id', 'ASC');
     }
 

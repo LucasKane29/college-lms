@@ -22,6 +22,6 @@ final class ScheduleTopicVoter extends Voter
         $user = $token->getUser();
 
         return $user instanceof User && UserRole::Teacher === $user->getRole()
-            && null !== $user->getId() && $subject->getDiscipline()?->getTeacher()?->getId() === $user->getId();
+            && null !== $user->getId() && $subject->getDiscipline()?->hasTeacher($user);
     }
 }

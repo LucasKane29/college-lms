@@ -56,7 +56,7 @@ class DisciplineTest extends WebTestCase
 
     private function discipline(User $teacher, string $name, array $groups = []): Discipline
     {
-        $discipline = (new Discipline())->setName($name)->setTeacher($teacher);
+        $discipline = (new Discipline())->setName($name)->addTeacher($teacher);
         foreach ($groups as $group) $discipline->addGroup($group);
         $this->manager()->persist($discipline);
         $this->manager()->flush();
@@ -186,7 +186,7 @@ class DisciplineTest extends WebTestCase
         $this->manager()->clear();
         $saved = $this->manager()->getRepository(Discipline::class)->findOneBy(['name' => 'Математика']);
         self::assertNotNull($saved);
-        self::assertSame($teacherId, $saved->getTeacher()->getId());
+        self::assertSame($teacherId, $saved->getTeachers()->first()->getId());
         self::assertCount(2, $saved->getGroups());
         self::assertSame(2, (int) $this->manager()->getConnection()->fetchOne('SELECT COUNT(*) FROM discipline_groups WHERE discipline_id = ?', [$saved->getId()]));
         $this->client->followRedirect();
@@ -211,7 +211,7 @@ class DisciplineTest extends WebTestCase
         $this->client->request('GET', '/teacher/disciplines/'.$id.'/edit');
         $token = $this->client->getCrawler()->filter('input[name="discipline[_token]"]')->attr('value');
         $this->client->request('POST', '/teacher/disciplines/'.$id.'/edit', ['discipline' => [
-            'name' => 'Математика', 'groups' => [$secondId], '_token' => $token,
+            'name' => 'Математика', 'groups' => [$secondId], 'teachers' => [$teacher->getId()], '_token' => $token,
         ]]);
         self::assertResponseStatusCodeSame(303);
         $this->manager()->clear();
@@ -312,7 +312,7 @@ class DisciplineTest extends WebTestCase
         $this->manager()->clear();
         $saved = $this->manager()->find(Discipline::class, $id);
         self::assertSame('Оновлена дисципліна', $saved->getName());
-        self::assertSame($teacherId, $saved->getTeacher()->getId());
+        self::assertSame($teacherId, $saved->getTeachers()->first()->getId());
     }
 
     public function testTeacherCanViewOwnDisciplineButCannotEditItOrItsGroups(): void
@@ -378,16 +378,19 @@ class DisciplineTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('main', 'Вкажіть тему заняття.');
         $this->client->request('GET', '/teacher/disciplines/new');
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('select[name="discipline[teachers][]"][multiple]');
     }
 
     public function testPaginationPreservesAllGroupLinks(): void
     {
         $teacher = $this->user('teacher@example.com', UserRole::Teacher);
+        $coTeacher = $this->user('co-teacher@example.com', UserRole::Teacher);
         $curator = $this->user('curator@example.com', UserRole::Curator);
         $first = $this->group($curator, 'КН-21');
         $second = $this->group($curator, 'КН-22');
-        for ($index = 0; $index < 21; ++$index) $this->discipline($teacher, sprintf('Дисципліна %02d', $index), [$first, $second]);
+        for ($index = 0; $index < 21; ++$index) $this->discipline($teacher, sprintf('Дисципліна %02d', $index), [$first, $second])->addTeacher($coTeacher);
+        $this->manager()->flush();
         $this->client->loginUser($teacher);
         $this->client->request('GET', '/teacher/disciplines');
         self::assertResponseIsSuccessful();
@@ -399,6 +402,7 @@ class DisciplineTest extends WebTestCase
         self::assertSelectorCount(1, 'tr[data-discipline-id]');
         self::assertSelectorTextContains('tbody', 'КН-21');
         self::assertSelectorTextContains('tbody', 'КН-22');
+        self::assertSelectorTextContains('tbody', 'co-teacher@example.com');
     }
 
     public function testDisciplineSchedulePaginationAndTopicCsrf(): void
@@ -424,5 +428,69 @@ class DisciplineTest extends WebTestCase
         $this->client->request('POST', $url.'/topics/new', ['lesson_topic' => ['name' => 'Тест', '_token' => 'invalid']]);
         self::assertResponseStatusCodeSame(422);
         self::assertSame(0, $this->manager()->getRepository(LessonTopic::class)->count([]));
+    }
+
+    public static function disciplineManagers(): iterable
+    {
+        yield 'head teacher' => [UserRole::HeadTeacher];
+        yield 'administrator' => [UserRole::Admin];
+    }
+
+    #[DataProvider('disciplineManagers')]
+    public function testManagersCanCreateAndEditMultipleTeachers(UserRole $role): void
+    {
+        $first = $this->user('first@example.com', UserRole::Teacher);
+        $second = $this->user('second@example.com', UserRole::Teacher);
+        $student = $this->user('student@example.com', UserRole::Student);
+        $firstId = $first->getId();
+        $secondId = $second->getId();
+        $this->client->loginUser($this->user('manager@example.com', $role));
+        $this->client->request('GET', '/teacher/disciplines/new');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('select[name="discipline[teachers][]"][multiple]');
+        self::assertSelectorCount(2, 'select[name="discipline[teachers][]"] option');
+        self::assertSelectorNotExists('select[name="discipline[teachers][]"] option[value="'.$student->getId().'"]');
+        $this->client->submitForm('Створити дисципліну', [
+            'discipline[name]' => 'Спільна дисципліна', 'discipline[teachers]' => [$firstId, $secondId],
+        ]);
+        self::assertResponseStatusCodeSame(303);
+        $this->manager()->clear();
+        $saved = $this->manager()->getRepository(Discipline::class)->findOneBy(['name' => 'Спільна дисципліна']);
+        self::assertCount(2, $saved->getTeachers());
+        $id = $saved->getId();
+        self::assertSame(2, (int) $this->manager()->getConnection()->fetchOne('SELECT COUNT(*) FROM discipline_teachers WHERE discipline_id = ?', [$id]));
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('main', 'first@example.com');
+        self::assertSelectorTextContains('main', 'second@example.com');
+        $this->client->request('GET', '/teacher/disciplines/'.$id.'/edit');
+        self::assertSelectorCount(2, 'select[name="discipline[teachers][]"] option[selected]');
+        $this->client->submitForm('Зберегти дисципліну', ['discipline[teachers]' => [$secondId]]);
+        self::assertResponseStatusCodeSame(303);
+        $this->manager()->clear();
+        $saved = $this->manager()->find(Discipline::class, $id);
+        self::assertCount(1, $saved->getTeachers());
+        self::assertSame($secondId, $saved->getTeachers()->first()->getId());
+        $this->client->loginUser($this->manager()->find(User::class, $firstId));
+        $this->client->request('GET', '/teacher/disciplines/'.$id);
+        self::assertResponseStatusCodeSame(403);
+        $this->client->loginUser($this->manager()->find(User::class, $secondId));
+        $this->client->request('GET', '/teacher/disciplines/'.$id);
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testTeacherSelectionRejectsEmptyAndNonTeacherValues(): void
+    {
+        $student = $this->user('student@example.com', UserRole::Student);
+        $studentId = $student->getId();
+        $this->client->loginUser($this->user('head@example.com', UserRole::HeadTeacher));
+        foreach ([[], [$studentId], [999999]] as $teachers) {
+            $this->client->request('GET', '/teacher/disciplines/new');
+            $token = $this->client->getCrawler()->filter('input[name="discipline[_token]"]')->attr('value');
+            $this->client->request('POST', '/teacher/disciplines/new', ['discipline' => [
+                'name' => 'Не зберігати', 'teachers' => $teachers, '_token' => $token,
+            ]]);
+            self::assertResponseStatusCodeSame(422);
+            self::assertSame(0, $this->manager()->getRepository(Discipline::class)->count([]));
+        }
     }
 }

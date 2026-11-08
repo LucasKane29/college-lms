@@ -33,11 +33,14 @@ class TeacherDisciplineController extends AbstractController
     }
 
     #[Route('/disciplines/new', name: 'app_teacher_discipline_new', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_TEACHER')]
     public function create(Request $request, EntityManagerInterface $manager): Response
     {
-        $discipline = (new Discipline())->setTeacher($this->getUser());
-        $form = $this->createForm(DisciplineType::class, $discipline);
+        $discipline = new Discipline();
+        $manageTeachers = $this->isGranted('ROLE_HEAD_TEACHER');
+        if (!$manageTeachers) {
+            $discipline->addTeacher($this->getUser());
+        }
+        $form = $this->createForm(DisciplineType::class, $discipline, ['manage_teachers' => $manageTeachers]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $manager->persist($discipline);
@@ -95,7 +98,7 @@ class TeacherDisciplineController extends AbstractController
     public function edit(int $id, Request $request, DisciplineRepository $disciplines, EntityManagerInterface $manager): Response
     {
         $discipline = $this->managedDiscipline($id, $disciplines);
-        $form = $this->createForm(DisciplineType::class, $discipline);
+        $form = $this->createForm(DisciplineType::class, $discipline, ['manage_teachers' => true]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $manager->flush();

@@ -43,9 +43,9 @@ class ScheduleTest extends WebTestCase
         $first = (new Group())->setName('КН-21')->setCurator($curator);
         $second = (new Group())->setName('КН-22')->setCurator($curator);
         $pair = (new Pair())->setWeekendStart(new \DateTimeImmutable('1970-01-01 09:00'))->setWeekendEnd(new \DateTimeImmutable('1970-01-01 11:00'));
-        $discipline = (new Discipline())->setName('Математика')->setTeacher($teacher)->addGroup($first)->addGroup($second);
-        $other = (new Discipline())->setName('Алгебра')->setTeacher($teacher)->addGroup($first);
-        $foreign = (new Discipline())->setName('Чужа дисципліна')->setTeacher($teacher)->addGroup($second);
+        $discipline = (new Discipline())->setName('Математика')->addTeacher($teacher)->addGroup($first)->addGroup($second);
+        $other = (new Discipline())->setName('Алгебра')->addTeacher($teacher)->addGroup($first);
+        $foreign = (new Discipline())->setName('Чужа дисципліна')->addTeacher($teacher)->addGroup($second);
         foreach ([$first, $second, $pair, $discipline, $other, $foreign] as $entity) $manager->persist($entity);
         $manager->flush();
         $this->groupId = $first->getId();
@@ -251,7 +251,7 @@ class ScheduleTest extends WebTestCase
         $manager = $this->manager();
         $curator = $manager->getRepository(User::class)->findOneBy(['email' => 'curator@example.com']);
         $group = (new Group())->setName('Чужа група')->setCurator($curator);
-        $discipline = (new Discipline())->setName('Стороння дисципліна')->setTeacher($other)->addGroup($group);
+        $discipline = (new Discipline())->setName('Стороння дисципліна')->addTeacher($other)->addGroup($group);
         $lesson = (new Schedule())->setDiscipline($discipline)->setGroup($group)->setPair($manager->find(Pair::class, $this->pairId))->setLessonDate(new \DateTimeImmutable('2026-10-24'));
         foreach ([$group, $discipline, $lesson] as $entity) $manager->persist($entity);
         $manager->flush();
@@ -488,5 +488,51 @@ class ScheduleTest extends WebTestCase
         self::assertResponseStatusCodeSame(400);
         $this->client->request('GET', '/account', ['from' => ['bad']]);
         self::assertResponseStatusCodeSame(400);
+    }
+
+    public function testAdditionalTeacherSeesScheduleAndCanAssignTopicsUntilRemoved(): void
+    {
+        $second = $this->user('co-teacher@example.com', UserRole::Teacher);
+        $secondId = $second->getId();
+        $discipline = $this->manager()->find(Discipline::class, $this->disciplineId);
+        $discipline->addTeacher($second);
+        $topic = (new LessonTopic())->setName('Спільна тема')->setDiscipline($discipline);
+        $this->manager()->persist($topic);
+        $this->manager()->flush();
+        $topicId = $topic->getId();
+        $this->createLesson();
+        $id = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId])->getId();
+        $this->client->loginUser($this->manager()->find(User::class, $secondId));
+        $this->client->request('GET', '/schedule?from=2026-10-24&to=2026-10-24&discipline='.$this->disciplineId);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('[data-ui~="schedule-cell"][data-ui~="filled"]', 'Математика');
+        self::assertSelectorTextContains('[data-ui~="schedule-cell"][data-ui~="filled"]', 'co-teacher@example.com');
+        $this->client->request('GET', '/schedule/'.$id.'/topic');
+        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => $topicId]);
+        self::assertResponseStatusCodeSame(303);
+        $this->manager()->clear();
+        self::assertSame($topicId, $this->manager()->find(Schedule::class, $id)->getTopic()->getId());
+        $discipline = $this->manager()->find(Discipline::class, $this->disciplineId);
+        $discipline->removeTeacher($this->manager()->find(User::class, $secondId));
+        $this->manager()->flush();
+        $this->client->request('GET', '/schedule/'.$id.'/topic');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testConflictsIncludeEveryAssignedTeacher(): void
+    {
+        $second = $this->user('co-teacher@example.com', UserRole::Teacher);
+        $discipline = $this->manager()->find(Discipline::class, $this->disciplineId);
+        $discipline->addTeacher($second);
+        $other = (new Discipline())->setName('Предмет другого викладача')->addTeacher($second)
+            ->addGroup($this->manager()->find(Group::class, $this->secondGroupId));
+        $this->manager()->persist($other);
+        $this->manager()->flush();
+        $otherId = $other->getId();
+        $this->createLesson();
+        $this->client->request('GET', $this->cell($this->secondGroupId));
+        $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $otherId]);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('[role="alert"]', 'Викладач вже має заняття');
     }
 }

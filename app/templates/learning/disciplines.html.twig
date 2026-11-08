@@ -6,9 +6,9 @@
         <p data-ui="admin-description" class="mt-2 mb-6 text-slate-500">Група {{ group.name }} · Дисциплін: {{ total }}</p>
         <div data-ui="admin-table-scroll" class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table data-ui="admin-table" class="w-full border-collapse text-left text-sm [&_th]:whitespace-nowrap [&_th]:bg-slate-100 [&_th]:font-semibold [&_th]:p-4 [&_td]:p-4 [&_th]:border-b [&_td]:border-b [&_th]:border-slate-200 [&_td]:border-slate-200 [&_th]:align-top [&_td]:align-top [&_td]:min-w-[110px] [&_td]:wrap-anywhere [&_td:last-child]:whitespace-nowrap [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-slate-50">
-                <thead><tr><th scope="col">Дисципліна</th><th scope="col">Викладач</th><th scope="col">Опис</th></tr></thead>
+                <thead><tr><th scope="col">Дисципліна</th><th scope="col">Викладачі</th><th scope="col">Опис</th></tr></thead>
                 <tbody>
-                    {% for discipline in disciplines %}<tr data-discipline-id="{{ discipline.id }}"><td>{{ discipline.name }}</td><td>{{ discipline.teacher.fullName }}</td><td data-ui="discipline-description" class="mb-4 whitespace-pre-wrap wrap-anywhere">{{ discipline.description ?? '—' }}</td></tr>
+                    {% for discipline in disciplines %}<tr data-discipline-id="{{ discipline.id }}"><td>{{ discipline.name }}</td><td>{{ discipline.teacherNames }}</td><td data-ui="discipline-description" class="mb-4 whitespace-pre-wrap wrap-anywhere">{{ discipline.description ?? '—' }}</td></tr>
                     {% else %}<tr><td colspan="3" data-ui="admin-empty" class="px-4! py-12! text-center text-slate-500">За вашою групою ще не закріплено дисциплін.</td></tr>{% endfor %}
                 </tbody>
             </table>

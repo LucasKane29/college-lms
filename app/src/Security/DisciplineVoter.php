@@ -35,6 +35,6 @@ class DisciplineVoter extends Voter
 
         return self::VIEW === $attribute && $this->decisionManager->decide($token, ['ROLE_TEACHER'])
             && null !== $user->getId()
-            && $subject->getTeacher()?->getId() === $user->getId();
+            && $subject->hasTeacher($user);
     }
 }

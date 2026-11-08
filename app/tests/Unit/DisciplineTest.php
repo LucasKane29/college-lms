@@ -4,10 +4,23 @@ namespace App\Tests\Unit;
 
 use App\Entity\Discipline;
 use App\Entity\Group;
+use App\Entity\User;
 use PHPUnit\Framework\TestCase;
 
 class DisciplineTest extends TestCase
 {
+    public function testTeacherAssignmentsDoNotDuplicateAndCanBeRemoved(): void
+    {
+        $first = (new User())->setFullName('Перший викладач');
+        $second = (new User())->setFullName('Другий викладач');
+        $discipline = (new Discipline())->addTeacher($first)->addTeacher($first)->addTeacher($second);
+        self::assertCount(2, $discipline->getTeachers());
+        self::assertTrue($discipline->hasTeacher($second));
+        self::assertSame('Перший викладач, Другий викладач', $discipline->getTeacherNames());
+        $discipline->removeTeacher($first);
+        self::assertFalse($discipline->hasTeacher($first));
+        self::assertTrue($discipline->hasTeacher($second));
+    }
     public function testGroupLinksStaySynchronizedAndDoNotDuplicate(): void
     {
         $discipline = new Discipline();

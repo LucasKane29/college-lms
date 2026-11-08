@@ -30,7 +30,7 @@ class GroupRepository extends ServiceEntityRepository
     {
         return 0 < (int) $this->createQueryBuilder('g')->select('COUNT(g.id)')
             ->innerJoin('g.disciplines', 'discipline')
-            ->where('g.id = :id')->andWhere('discipline.teacher = :teacher')
+            ->where('g.id = :id')->andWhere(':teacher MEMBER OF discipline.teachers')
             ->setParameter('id', $group->getId())->setParameter('teacher', $teacher)
             ->getQuery()->getSingleScalarResult();
     }
@@ -40,7 +40,7 @@ class GroupRepository extends ServiceEntityRepository
     {
         $query = $this->createQueryBuilder('g')->distinct()->leftJoin('g.curator', 'curator')->addSelect('curator');
         if (!$admin) {
-            $query->innerJoin('g.disciplines', 'discipline')->andWhere('discipline.teacher = :teacher')->setParameter('teacher', $teacher);
+            $query->innerJoin('g.disciplines', 'discipline')->andWhere(':teacher MEMBER OF discipline.teachers')->setParameter('teacher', $teacher);
         }
         $total = (int) (clone $query)->select('COUNT(DISTINCT g.id)')->getQuery()->getSingleScalarResult();
         $pages = max(1, (int) ceil($total / 20));

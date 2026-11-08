@@ -24,7 +24,7 @@ final class ScheduleManager
                 $query->andWhere('g = :group')->setParameter('group', $user->getStudentGroup()?->getId() ?? 0);
                 break;
             case UserRole::Teacher:
-                $query->distinct()->innerJoin('g.disciplines', 'd')->andWhere('d.teacher = :user')->setParameter('user', $user);
+                $query->distinct()->innerJoin('g.disciplines', 'd')->andWhere(':user MEMBER OF d.teachers')->setParameter('user', $user);
                 break;
             case UserRole::Curator:
                 $query->andWhere('g.curator = :user')->setParameter('user', $user);
@@ -44,7 +44,7 @@ final class ScheduleManager
         if (!$groups) return [];
 
         $query = $this->manager->createQueryBuilder()->select('s', 'd', 't', 'p', 'g', 'topic')
-            ->from(Schedule::class, 's')->join('s.discipline', 'd')->join('d.teacher', 't')
+            ->from(Schedule::class, 's')->join('s.discipline', 'd')->leftJoin('d.teachers', 't')
             ->join('s.pair', 'p')->join('s.group', 'g')
             ->leftJoin('s.topic', 'topic')
             ->where('s.lessonDate BETWEEN :from AND :to')->andWhere('s.group IN (:groups)')
@@ -52,7 +52,7 @@ final class ScheduleManager
             ->setParameter('groups', array_map(static fn (Group $group) => $group->getId(), $groups))
             ->orderBy('s.lessonDate', 'ASC')->addOrderBy('p.number', 'ASC');
         if ($teacher) {
-            $query->andWhere('d.teacher = :teacher')->setParameter('teacher', $teacher);
+            $query->andWhere(':teacher MEMBER OF d.teachers')->setParameter('teacher', $teacher);
         }
 
         return $query->getQuery()->getResult();
@@ -66,7 +66,7 @@ final class ScheduleManager
 
         $changed = $this->manager->createQueryBuilder()->update(Schedule::class, 's')->set('s.topic', ':topic')
             ->where('s.id = :id')->andWhere('s.discipline = :discipline')
-            ->andWhere('s.discipline IN (SELECT d.id FROM App\Entity\Discipline d WHERE d.teacher = :teacher)')
+            ->andWhere('s.discipline IN (SELECT d.id FROM App\Entity\Discipline d WHERE :teacher MEMBER OF d.teachers)')
             ->setParameter('topic', $topic)->setParameter('id', $lesson->getId())
             ->setParameter('discipline', $lesson->getDiscipline())->setParameter('teacher', $teacher)->getQuery()->execute();
         if (1 === $changed) {
@@ -74,7 +74,7 @@ final class ScheduleManager
         }
         // MySQL may report zero changed rows when the same topic is selected again.
         $current = $this->manager->createQueryBuilder()->select('COUNT(s.id)')->from(Schedule::class, 's')
-            ->join('s.discipline', 'd')->where('s.id = :id')->andWhere('d = :discipline')->andWhere('d.teacher = :teacher')
+            ->join('s.discipline', 'd')->where('s.id = :id')->andWhere('d = :discipline')->andWhere(':teacher MEMBER OF d.teachers')
             ->setParameter('id', $lesson->getId())->setParameter('discipline', $lesson->getDiscipline())->setParameter('teacher', $teacher);
         if ($topic) {
             $current->andWhere('s.topic = :topic')->setParameter('topic', $topic);
@@ -94,11 +94,13 @@ final class ScheduleManager
         if (!$discipline || !$discipline->getGroups()->contains($lesson->getGroup())) {
             return 'Оберіть дисципліну, призначену цій групі.';
         }
-        $others = $this->manager->createQueryBuilder()->select('s', 'd')->from(Schedule::class, 's')
-            ->join('s.discipline', 'd')->where('s.lessonDate = :date')->andWhere('s.pair = :pair')
-            ->andWhere('s.group = :group OR d.teacher = :teacher')
+        $others = $this->manager->createQueryBuilder()->select('s', 'd')->distinct()->from(Schedule::class, 's')
+            ->join('s.discipline', 'd')->leftJoin('d.teachers', 'sharedTeacher')
+            ->where('s.lessonDate = :date')->andWhere('s.pair = :pair')
+            ->andWhere('s.group = :group OR sharedTeacher.id IN (:teachers)')
             ->setParameter('date', $lesson->getLessonDate(), 'date_immutable')->setParameter('pair', $lesson->getPair())
-            ->setParameter('group', $lesson->getGroup())->setParameter('teacher', $discipline->getTeacher())
+            ->setParameter('group', $lesson->getGroup())
+            ->setParameter('teachers', $discipline->getTeachers()->map(static fn (User $teacher) => $teacher->getId())->toArray() ?: [0])
             ->getQuery()->getResult();
         foreach ($others as $other) {
             if ($other->getId() === $lesson->getId()) continue;

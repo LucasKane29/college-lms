@@ -10,7 +10,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: DisciplineRepository::class)]
 #[ORM\Table(name: 'disciplines')]
-#[ORM\Index(name: 'IDX_DISCIPLINE_TEACHER', columns: ['teacher_id'])]
 class Discipline
 {
     #[ORM\Id]
@@ -27,9 +26,14 @@ class Discipline
     #[Assert\Length(max: 5000, maxMessage: 'Опис має містити до {{ limit }} символів.')]
     private ?string $description = null;
 
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
-    private ?User $teacher = null;
+    /** @var Collection<int, User> */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'discipline_teachers')]
+    #[ORM\JoinColumn(name: 'discipline_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'teacher_id', referencedColumnName: 'id', onDelete: 'RESTRICT')]
+    #[Assert\Count(min: 1, minMessage: 'Оберіть хоча б одного викладача.')]
+    #[ORM\OrderBy(['fullName' => 'ASC', 'id' => 'ASC'])]
+    private Collection $teachers;
 
     /** @var Collection<int, Group> */
     #[ORM\ManyToMany(targetEntity: Group::class, inversedBy: 'disciplines')]
@@ -44,6 +48,7 @@ class Discipline
     public function __construct()
     {
         $this->groups = new ArrayCollection();
+        $this->teachers = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -77,16 +82,37 @@ class Discipline
         return $this;
     }
 
-    public function getTeacher(): ?User
+    /** @return Collection<int, User> */
+    public function getTeachers(): Collection
     {
-        return $this->teacher;
+        return $this->teachers;
     }
 
-    public function setTeacher(User $teacher): static
+    public function addTeacher(User $teacher): static
     {
-        $this->teacher = $teacher;
+        if (!$this->teachers->contains($teacher)) {
+            $this->teachers->add($teacher);
+        }
 
         return $this;
+    }
+
+    public function removeTeacher(User $teacher): static
+    {
+        $this->teachers->removeElement($teacher);
+
+        return $this;
+    }
+
+    public function hasTeacher(User $teacher): bool
+    {
+        return $this->teachers->exists(static fn (int $key, User $assigned): bool => $assigned === $teacher
+            || (null !== $teacher->getId() && $assigned->getId() === $teacher->getId()));
+    }
+
+    public function getTeacherNames(): string
+    {
+        return implode(', ', $this->teachers->map(static fn (User $teacher): string => $teacher->getFullName())->toArray());
     }
 
     public function getCreatedAt(): \DateTimeImmutable
