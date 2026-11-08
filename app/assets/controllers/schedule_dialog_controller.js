@@ -14,7 +14,14 @@ export default class extends Controller {
 
     close(event) {
         const frame = this.element.closest('turbo-frame');
-        if (!document.querySelector('.schedule-table')) return;
+        if (!document.querySelector('.schedule-table')) {
+            const backLink = this.element.querySelector('[data-modal-return]');
+            if (backLink && event?.type === 'cancel') {
+                event.preventDefault();
+                window.location.assign(backLink.href);
+            }
+            return;
+        }
         event?.preventDefault();
         this.element.close();
         frame.replaceChildren();

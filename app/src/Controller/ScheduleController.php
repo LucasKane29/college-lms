@@ -8,6 +8,9 @@ use App\Entity\Pair;
 use App\Entity\Schedule;
 use App\Form\PairType;
 use App\Form\ScheduleType;
+use App\Form\ScheduleTopicType;
+use App\Security\ScheduleTopicVoter;
+use App\Security\UserRole;
 use App\Service\ScheduleCalendar;
 use App\Service\ScheduleManager;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -19,12 +22,13 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\ExpressionLanguage\Expression;
 
 #[IsGranted('ROLE_USER')]
 class ScheduleController extends AbstractController
 {
     #[Route('/schedule', name: 'app_schedule', methods: ['GET'])]
-    #[IsGranted('ROLE_HEAD_TEACHER')]
+    #[IsGranted(new Expression("is_granted('ROLE_HEAD_TEACHER') or is_granted('ROLE_TEACHER') or is_granted('ROLE_DIRECTOR')"))]
     public function index(Request $request, ScheduleCalendar $calendar, ScheduleManager $schedule, EntityManagerInterface $manager): Response
     {
         $input = $this->calendarQuery($request);
@@ -32,9 +36,19 @@ class ScheduleController extends AbstractController
         $allGroups = $schedule->visibleGroups($this->getUser());
         $group = isset($input['group']) ? ($manager->find(Group::class, $input['group']) ?? throw $this->createNotFoundException()) : null;
         $discipline = isset($input['discipline']) ? ($manager->find(Discipline::class, $input['discipline']) ?? throw $this->createNotFoundException()) : null;
+        $teacher = UserRole::Teacher === $this->getUser()->getRole() ? $this->getUser() : null;
+        if ($teacher && (($group && !in_array($group, $allGroups, true))
+            || ($discipline && $discipline->getTeacher()->getId() !== $teacher->getId()))) {
+            throw $this->createAccessDeniedException();
+        }
+        $disciplines = $manager->getRepository(Discipline::class)->createQueryBuilder('d')
+            ->join('d.teacher', 'teacher')->addSelect('teacher')->orderBy('d.name', 'ASC')->addOrderBy('d.id', 'ASC');
+        if ($teacher) {
+            $disciplines->andWhere('d.teacher = :teacher')->setParameter('teacher', $teacher);
+        }
         $groups = $group ? [$group] : $allGroups;
         $grid = $counts = [];
-        foreach ($schedule->lessons($view['visibleFrom'], $view['visibleTo'], $groups) as $lesson) {
+        foreach ($schedule->lessons($view['visibleFrom'], $view['visibleTo'], $groups, $teacher) as $lesson) {
             $date = $lesson->getLessonDate()->format('Y-m-d');
             // Keep occupied slots in the grid even when another discipline is filtered out.
             $grid[$date][$lesson->getGroup()->getId()][$lesson->getPair()->getId()] = $lesson;
@@ -48,8 +62,7 @@ class ScheduleController extends AbstractController
         return $this->render('schedule/index.html.twig', $view + [
             'allGroups' => $allGroups, 'groups' => $groups, 'grid' => $grid, 'counts' => $counts,
             'selectedGroup' => $group, 'selectedDiscipline' => $discipline,
-            'disciplines' => $manager->getRepository(Discipline::class)->createQueryBuilder('d')
-                ->join('d.teacher', 'teacher')->addSelect('teacher')->orderBy('d.name', 'ASC')->addOrderBy('d.id', 'ASC')->getQuery()->getResult(),
+            'disciplines' => $disciplines->getQuery()->getResult(),
             'pairs' => $manager->getRepository(Pair::class)->findBy([], ['number' => 'ASC']),
         ]);
     }
@@ -82,6 +95,7 @@ class ScheduleController extends AbstractController
         $lesson = $manager->getRepository(Schedule::class)->findOneBy(['lessonDate' => $day, 'group' => $group, 'pair' => $pair]);
         $existing = $lesson !== null;
         $lesson ??= (new Schedule())->setLessonDate($day)->setGroup($group)->setPair($pair);
+        $originalDiscipline = $lesson->getDiscipline();
         $query = $this->calendarQuery($request);
         if (!$existing && isset($query['discipline'])) {
             $selected = $manager->find(Discipline::class, $query['discipline']);
@@ -95,12 +109,22 @@ class ScheduleController extends AbstractController
         ]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($lesson->getDiscipline() !== $originalDiscipline) {
+                $lesson->setTopic(null);
+            }
             if ($error = $schedule->lessonError($lesson)) {
                 $form->addError(new FormError($error));
             } else {
                 try {
-                    $manager->persist($lesson);
-                    $manager->flush();
+                    if ($existing && $lesson->getDiscipline() !== $originalDiscipline) {
+                        // Replace the discipline and clear its old topic in one database update.
+                        $manager->createQueryBuilder()->update(Schedule::class, 's')->set('s.discipline', ':discipline')->set('s.topic', 'NULL')
+                            ->where('s.id = :id')->setParameter('id', $lesson->getId())->setParameter('discipline', $lesson->getDiscipline())
+                            ->getQuery()->execute();
+                    } else {
+                        $manager->persist($lesson);
+                        $manager->flush();
+                    }
                     $this->addFlash('success', 'Заняття збережено.');
 
                     return $this->redirectToRoute($this->returnRoute($query), $query, Response::HTTP_SEE_OTHER);
@@ -112,6 +136,36 @@ class ScheduleController extends AbstractController
 
         return $this->render('schedule/lesson_form.html.twig', [
             'lessonForm' => $form, 'lesson' => $lesson, 'existing' => $existing, 'query' => $query, 'returnRoute' => $this->returnRoute($query),
+        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    #[Route('/schedule/{id}/topic', name: 'app_schedule_topic', requirements: ['id' => '\\d+'], methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_TEACHER')]
+    public function topic(int $id, Request $request, EntityManagerInterface $manager, ScheduleManager $schedule): Response
+    {
+        $lesson = $manager->find(Schedule::class, $id) ?? throw $this->createNotFoundException();
+        $this->denyAccessUnlessGranted(ScheduleTopicVoter::ASSIGN, $lesson);
+        $query = $this->calendarQuery($request) + ['view' => 'schedule'];
+        $form = $this->createForm(ScheduleTopicType::class, ['topic' => $lesson->getTopic()], [
+            'discipline' => $lesson->getDiscipline(),
+            'action' => $this->generateUrl('app_schedule_topic', ['id' => $id] + $query),
+        ]);
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($schedule->assignTopic($lesson, $form->get('topic')->getData(), $this->getUser())) {
+                $this->addFlash('success', 'Тему заняття збережено.');
+                if ($request->headers->get('Turbo-Frame') === 'schedule-modal') {
+                    return new Response('<turbo-stream action="update" target="schedule-modal"><template></template></turbo-stream><turbo-stream action="refresh"></turbo-stream>', headers: ['Content-Type' => 'text/vnd.turbo-stream.html']);
+                }
+
+                return $this->redirectToRoute($this->returnRoute($query), $query, Response::HTTP_SEE_OTHER);
+            }
+            $form->addError(new FormError('Заняття або його викладач змінилися. Оновіть розклад.'));
+        }
+
+        return $this->render('schedule/topic_form.html.twig', [
+            'topicForm' => $form, 'lesson' => $lesson, 'query' => $query, 'returnRoute' => $this->returnRoute($query),
+            'inModal' => $request->headers->get('Turbo-Frame') === 'schedule-modal',
         ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
@@ -143,6 +197,9 @@ class ScheduleController extends AbstractController
     #[IsGranted('ROLE_HEAD_TEACHER')]
     public function pair(Request $request, EntityManagerInterface $manager, ScheduleManager $schedule, ?int $id = null): Response
     {
+        $query = $this->calendarQuery($request);
+        $returnRoute = isset($query['view']) && in_array($query['view'], ['schedule', 'account'], true)
+            ? $this->returnRoute($query) : 'app_schedule_pairs';
         $pair = $id === null ? new Pair() : ($manager->find(Pair::class, $id) ?? throw $this->createNotFoundException());
         if ($id === null) {
             $last = $manager->getRepository(Pair::class)->findOneBy([], ['number' => 'DESC']);
@@ -152,7 +209,10 @@ class ScheduleController extends AbstractController
                     ->setWeekendStart($last->getWeekendEnd())->setWeekendEnd($last->getWeekendEnd()->modify('+120 minutes'));
             }
         }
-        $form = $this->createForm(PairType::class, $pair);
+        $form = $this->createForm(PairType::class, $pair, [
+            'action' => $this->generateUrl($id === null ? 'app_schedule_pair_new' : 'app_schedule_pair_edit',
+                ($id === null ? [] : ['id' => $id]) + $query),
+        ]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             if ($error = $schedule->pairError($pair)) {
@@ -163,14 +223,21 @@ class ScheduleController extends AbstractController
                     $manager->flush();
                     $this->addFlash('success', 'Налаштування пари збережено.');
 
-                    return $this->redirectToRoute('app_schedule_pairs', status: Response::HTTP_SEE_OTHER);
+                    if ($request->headers->get('Turbo-Frame') === 'schedule-modal') {
+                        return new Response('<turbo-stream action="update" target="schedule-modal"><template></template></turbo-stream><turbo-stream action="refresh"></turbo-stream>', headers: ['Content-Type' => 'text/vnd.turbo-stream.html']);
+                    }
+
+                    return $this->redirectToRoute($returnRoute, $query, Response::HTTP_SEE_OTHER);
                 } catch (UniqueConstraintViolationException) {
                     $form->addError(new FormError('Пара з таким номером вже існує.'));
                 }
             }
         }
 
-        return $this->render('schedule/pair_form.html.twig', ['pairForm' => $form, 'creating' => $id === null], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+        return $this->render('schedule/pair_form.html.twig', [
+            'pairForm' => $form, 'creating' => $id === null, 'returnRoute' => $returnRoute, 'query' => $query,
+            'inModal' => $request->headers->get('Turbo-Frame') === 'schedule-modal',
+        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     private function calendarQuery(Request $request): array

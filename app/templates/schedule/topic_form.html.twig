@@ -1,0 +1,17 @@
+{% extends 'schedule/layout.html.twig' %}
+{% block title %}Тема заняття · College LMS{% endblock %}
+{% block workspace_content %}
+    <a href="{{ path(returnRoute, query) }}">← До розкладу</a>
+    <turbo-frame id="schedule-modal">
+        <dialog open class="schedule-dialog" data-controller="schedule-dialog" data-action="cancel->schedule-dialog#close click->schedule-dialog#backdrop turbo:before-cache@document->schedule-dialog#close" aria-labelledby="topic-title">
+            <div class="schedule-dialog-heading"><h1 id="topic-title">Тема заняття</h1><a href="{{ path(returnRoute, query) }}" data-modal-return data-action="schedule-dialog#close" aria-label="Закрити">×</a></div>
+            <p>{{ lesson.discipline.name }} · {{ lesson.group.name }}</p>
+            <p>{{ lesson.lessonDate|date('d.m.Y') }} · {{ lesson.pair.number }} пара · {{ lesson.pair.startOn(lesson.lessonDate)|date('H:i') }}–{{ lesson.pair.endOn(lesson.lessonDate)|date('H:i') }}</p>
+            {{ form_start(topicForm, {attr: {'data-turbo-frame': inModal ? 'schedule-modal' : '_top'}}) }}
+                <div role="alert">{{ form_errors(topicForm) }}</div>
+                {{ form_row(topicForm.topic) }}
+                <div class="schedule-actions"><button class="schedule-button" type="submit">Зберегти тему</button><a href="{{ path(returnRoute, query) }}" data-action="schedule-dialog#close">Скасувати</a></div>
+            {{ form_end(topicForm) }}
+        </dialog>
+    </turbo-frame>
+{% endblock %}

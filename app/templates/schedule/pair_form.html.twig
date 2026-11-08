@@ -1,14 +1,21 @@
 {% extends 'schedule/layout.html.twig' %}
 {% block title %}{{ creating ? 'Нова пара' : 'Редагування пари' }} · College LMS{% endblock %}
 {% block workspace_content %}
-    <div class="schedule-panel schedule-pair-form">
-        <h1>{{ creating ? 'Нова пара' : 'Редагування пари' }}</h1>
-        {{ form_start(pairForm) }}
+    <a href="{{ path(returnRoute, query) }}">← Назад</a>
+    <turbo-frame id="schedule-modal">
+    <dialog open class="schedule-dialog schedule-pair-form" data-controller="schedule-dialog" data-action="cancel->schedule-dialog#close click->schedule-dialog#backdrop turbo:before-cache@document->schedule-dialog#close" aria-labelledby="pair-title">
+        <div class="schedule-dialog-heading">
+            <h1 id="pair-title">{{ creating ? 'Нова пара' : 'Редагування пари' }}</h1>
+            <a href="{{ path(returnRoute, query) }}" data-modal-return data-action="schedule-dialog#close" aria-label="Закрити">×</a>
+        </div>
+        <p>Будні — понеділок–п’ятниця, вихідні — субота й неділя. Зміни часу застосовуються до всіх дат розкладу.</p>
+        {{ form_start(pairForm, {attr: {'data-turbo-frame': inModal ? 'schedule-modal' : '_top'}}) }}
             <div role="alert">{{ form_errors(pairForm) }}</div>
             {{ form_row(pairForm.number) }}
-            <fieldset><legend>Будні</legend>{{ form_row(pairForm.weekdayStart) }}{{ form_row(pairForm.weekdayEnd) }}</fieldset>
-            <fieldset><legend>Вихідні</legend>{{ form_row(pairForm.weekendStart) }}{{ form_row(pairForm.weekendEnd) }}</fieldset>
-            <div class="schedule-actions"><button class="schedule-button" type="submit">Зберегти пару</button><a href="{{ path('app_schedule_pairs') }}">Скасувати</a></div>
+            <fieldset><legend>Будні</legend><div class="schedule-pair-times">{{ form_row(pairForm.weekdayStart) }}{{ form_row(pairForm.weekdayEnd) }}</div></fieldset>
+            <fieldset><legend>Вихідні</legend><div class="schedule-pair-times">{{ form_row(pairForm.weekendStart) }}{{ form_row(pairForm.weekendEnd) }}</div></fieldset>
+            <div class="schedule-actions"><button class="schedule-button" type="submit">Зберегти пару</button><a href="{{ path(returnRoute, query) }}" data-action="schedule-dialog#close">Скасувати</a></div>
         {{ form_end(pairForm) }}
-    </div>
+    </dialog>
+    </turbo-frame>
 {% endblock %}

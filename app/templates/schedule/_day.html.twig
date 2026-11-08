@@ -5,7 +5,7 @@
     <div class="schedule-table-scroll" tabindex="0" role="region" aria-label="Розклад на {{ day|date('d.m.Y') }}">
         <table class="schedule-table">
             <caption class="schedule-sr-only">Розклад занять на {{ day|date('d.m.Y') }}</caption>
-            <thead><tr><th scope="col">Група</th>{% for pair in pairs %}<th scope="col">{{ pair.number }} пара<span>{{ pair.startOn(day)|date('H:i') }}–{{ pair.endOn(day)|date('H:i') }}</span></th>{% endfor %}</tr></thead>
+            <thead><tr><th scope="col">Група</th>{% for pair in pairs %}<th scope="col">{% if is_granted('ROLE_HEAD_TEACHER') %}<a href="{{ path('app_schedule_pair_edit', query|merge({id: pair.id, view: query.view|default('account')})) }}" data-turbo-frame="schedule-modal" aria-label="Редагувати пару {{ pair.number }}">{{ pair.number }} пара<span>{{ pair.startOn(day)|date('H:i') }}–{{ pair.endOn(day)|date('H:i') }}</span></a>{% else %}{{ pair.number }} пара<span>{{ pair.startOn(day)|date('H:i') }}–{{ pair.endOn(day)|date('H:i') }}</span>{% endif %}</th>{% endfor %}</tr></thead>
             <tbody>
                 {% for group in groups %}
                     <tr><th scope="row">{{ group.name }}</th>
@@ -18,8 +18,12 @@
                                     <a class="schedule-cell{% if lesson %} filled{% endif %}" href="{{ path('app_schedule_cell', query|merge({date: dateKey, groupId: group.id, pairId: pair.id})) }}" data-turbo-frame="schedule-modal" aria-label="{{ lesson ? 'Редагувати' : 'Додати' }} заняття: {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
                                         {% if lesson %}<strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% if lesson.topic %}<span>{{ lesson.topic.name }}</span>{% endif %}{% else %}<span class="schedule-add">+ Додати</span>{% endif %}
                                     </a>
+                                {% elseif lesson and is_granted('SCHEDULE_TOPIC_ASSIGN', lesson) %}
+                                    <a class="schedule-cell filled" href="{{ path('app_schedule_topic', query|merge({id: lesson.id, view: query.view|default('account')})) }}" data-turbo-frame="schedule-modal" aria-label="Призначити тему: {{ lesson.discipline.name }}, {{ group.name }}, {{ day|date('d.m.Y') }}, {{ pair.number }} пара">
+                                        <strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span><span>{{ lesson.topic ? lesson.topic.name : 'Призначити тему' }}</span>
+                                    </a>
                                 {% elseif lesson %}
-                                    <div class="schedule-cell filled"><strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span></div>
+                                    <div class="schedule-cell filled"><strong>{{ lesson.discipline.name }}</strong><span>{{ lesson.discipline.teacher.fullName }}</span>{% if lesson.topic %}<span>{{ lesson.topic.name }}</span>{% endif %}</div>
                                 {% else %}<span class="schedule-free">—</span>{% endif %}
                             </td>
                         {% endfor %}

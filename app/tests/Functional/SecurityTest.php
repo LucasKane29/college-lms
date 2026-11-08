@@ -381,9 +381,10 @@ class SecurityTest extends WebTestCase
         self::assertSelectorExists('.workspace-menu a[href="/account"][aria-current="page"]');
         $expected = match ($role) {
             UserRole::Student => ['/account', '/student/group', '/student/disciplines', '/student/teachers'],
-            UserRole::Teacher => ['/account', '/teacher/groups', '/teacher/disciplines'],
+            UserRole::Teacher => ['/account', '/schedule', '/teacher/groups', '/teacher/disciplines'],
             UserRole::Curator => ['/account', '/curator/groups', '/curator/students'],
             UserRole::HeadTeacher => ['/account', '/schedule', '/teacher/disciplines'],
+            UserRole::Director => ['/account', '/schedule'],
             UserRole::Admin => ['/account', '/schedule', '/admin/users', '/curator/groups', '/curator/students', '/teacher/disciplines'],
             default => ['/account'],
         };

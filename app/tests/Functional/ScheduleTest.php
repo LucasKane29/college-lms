@@ -9,6 +9,7 @@ use App\Entity\Schedule;
 use App\Entity\User;
 use App\Entity\LessonTopic;
 use App\Security\UserRole;
+use App\Service\ScheduleManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -128,7 +129,7 @@ class ScheduleTest extends WebTestCase
         $this->client->loginUser($this->user('editor-admin@example.com', UserRole::Admin));
         $this->client->request('GET', '/schedule');
         self::assertResponseIsSuccessful();
-        foreach ([UserRole::Teacher, UserRole::Student, UserRole::Curator, UserRole::Director, UserRole::User] as $role) {
+        foreach ([UserRole::Student, UserRole::Curator, UserRole::User] as $role) {
             $this->client->loginUser($this->user('editor-'.$role->name.'@example.com', $role));
             $this->client->request('GET', '/schedule');
             self::assertResponseStatusCodeSame(403);
@@ -144,18 +145,175 @@ class ScheduleTest extends WebTestCase
         $this->manager()->flush();
         $topicId = $topic->getId();
         $otherId = $other->getId();
-        $this->client->request('GET', $this->cell());
-        $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->disciplineId, 'schedule[topic]' => $otherId]);
+        $this->createLesson();
+        $lessonId = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId])->getId();
+        $this->client->loginUser($this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']));
+        $this->client->request('GET', '/schedule/'.$lessonId.'/topic');
+        self::assertSelectorNotExists('select[name="schedule[discipline]"]');
+        self::assertSelectorNotExists('button.schedule-delete');
+        self::assertSelectorNotExists('select[name="schedule_topic[topic]"] option[value="'.$otherId.'"]');
+        $token = $this->client->getCrawler()->filter('input[name="schedule_topic[_token]"]')->attr('value');
+        $this->client->request('POST', '/schedule/'.$lessonId.'/topic', ['schedule_topic' => ['topic' => $otherId, '_token' => $token]]);
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('[role="alert"]', 'Оберіть тему, що належить вибраній дисципліні.');
-        self::assertSame(0, $this->manager()->getRepository(Schedule::class)->count([]));
-        $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->disciplineId, 'schedule[topic]' => $topicId]);
+        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => $topicId]);
         self::assertResponseStatusCodeSame(303);
         $this->manager()->clear();
         $saved = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId]);
         self::assertSame($topicId, $saved->getTopic()->getId());
+        self::assertSame($this->disciplineId, $saved->getDiscipline()->getId());
+        self::assertSame($this->pairId, $saved->getPair()->getId());
+        self::assertSame('2026-10-24', $saved->getLessonDate()->format('Y-m-d'));
         $this->client->request('GET', '/teacher/disciplines/'.$this->disciplineId);
         self::assertSelectorTextContains('tr[data-lesson-id]', 'Похідна');
+        foreach ([UserRole::Teacher, UserRole::HeadTeacher, UserRole::Director, UserRole::Admin] as $role) {
+            $actor = UserRole::Teacher === $role
+                ? $this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com'])
+                : $this->user('viewer-'.$role->name.'@example.com', $role);
+            $this->client->loginUser($actor);
+            foreach (['/schedule', '/account'] as $url) {
+                $this->client->request('GET', $url.'?from=2026-10-24&to=2026-10-24');
+                self::assertResponseIsSuccessful();
+                self::assertSelectorTextContains('.schedule-cell.filled', 'Похідна');
+            }
+        }
+    }
+
+    public function testOnlyOwningTeacherCanAssignTopicAndCannotChangeLessonFields(): void
+    {
+        $this->createLesson();
+        $id = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId])->getId();
+        foreach ([UserRole::HeadTeacher, UserRole::Admin, UserRole::Director, UserRole::Student, UserRole::Curator, UserRole::User, UserRole::Teacher] as $role) {
+            $this->client->loginUser($this->user('forbidden-'.$role->name.'@example.com', $role));
+            foreach (['GET', 'POST'] as $method) {
+                $this->client->request($method, '/schedule/'.$id.'/topic');
+                self::assertResponseStatusCodeSame(403);
+            }
+        }
+        $teacher = $this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']);
+        $this->client->loginUser($teacher);
+        $this->client->request('GET', '/schedule/'.$id.'/topic');
+        $token = $this->client->getCrawler()->filter('input[name="schedule_topic[_token]"]')->attr('value');
+        $this->client->request('POST', '/schedule/'.$id.'/topic', ['schedule_topic' => [
+            'topic' => '', '_token' => $token, 'discipline' => $this->otherDisciplineId, 'group' => $this->secondGroupId,
+            'pair' => 999, 'lessonDate' => '2027-01-01',
+        ]]);
+        self::assertResponseStatusCodeSame(422);
+        $this->client->request('POST', '/schedule/'.$id.'/topic', ['schedule_topic' => ['topic' => '', '_token' => 'invalid']]);
+        self::assertResponseStatusCodeSame(422);
+        $this->manager()->clear();
+        $saved = $this->manager()->find(Schedule::class, $id);
+        self::assertNull($saved->getTopic());
+        self::assertSame($this->disciplineId, $saved->getDiscipline()->getId());
+        self::assertSame($this->groupId, $saved->getGroup()->getId());
+        self::assertSame($this->pairId, $saved->getPair()->getId());
+        $this->client->request('POST', $this->cell());
+        self::assertResponseStatusCodeSame(403);
+        $this->client->request('POST', '/schedule/'.$id.'/delete');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testStaffCannotSubmitTopicsAndDisciplineChangeClearsOldTopic(): void
+    {
+        $this->createLesson();
+        $lesson = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId]);
+        $id = $lesson->getId();
+        $topic = (new LessonTopic())->setName('Обрана викладачем')->setDiscipline($lesson->getDiscipline());
+        $lesson->setTopic($topic);
+        $this->manager()->persist($topic);
+        $this->manager()->flush();
+        $topicId = $topic->getId();
+        foreach ([UserRole::HeadTeacher, UserRole::Admin] as $role) {
+            $this->client->loginUser($this->user('staff-'.$role->name.'@example.com', $role));
+            $this->client->request('GET', $this->cell());
+            self::assertSelectorNotExists('select[name="schedule[topic]"]');
+            $token = $this->client->getCrawler()->filter('input[name="schedule[_token]"]')->attr('value');
+            $this->client->request('POST', $this->cell(), ['schedule' => ['discipline' => $this->disciplineId, 'topic' => '', '_token' => $token]]);
+            self::assertResponseStatusCodeSame(422);
+            $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->disciplineId]);
+            self::assertResponseStatusCodeSame(303);
+            $this->manager()->clear();
+            self::assertSame($topicId, $this->manager()->find(Schedule::class, $id)->getTopic()->getId());
+        }
+        $this->client->request('GET', $this->cell());
+        $this->client->submitForm('Зберегти заняття', ['schedule[discipline]' => $this->otherDisciplineId]);
+        self::assertResponseStatusCodeSame(303);
+        $this->manager()->clear();
+        self::assertNull($this->manager()->find(Schedule::class, $id)->getTopic());
+        self::assertSame($this->otherDisciplineId, $this->manager()->find(Schedule::class, $id)->getDiscipline()->getId());
+    }
+
+    public function testTeacherCalendarIsScopedAndDirectorIsReadOnly(): void
+    {
+        $this->createLesson();
+        $id = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId])->getId();
+        $teacher = $this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']);
+        $other = $this->user('different-teacher@example.com', UserRole::Teacher);
+        $manager = $this->manager();
+        $curator = $manager->getRepository(User::class)->findOneBy(['email' => 'curator@example.com']);
+        $group = (new Group())->setName('Чужа група')->setCurator($curator);
+        $discipline = (new Discipline())->setName('Стороння дисципліна')->setTeacher($other)->addGroup($group);
+        $lesson = (new Schedule())->setDiscipline($discipline)->setGroup($group)->setPair($manager->find(Pair::class, $this->pairId))->setLessonDate(new \DateTimeImmutable('2026-10-24'));
+        foreach ([$group, $discipline, $lesson] as $entity) $manager->persist($entity);
+        $manager->flush();
+        $foreignGroup = $group->getId();
+        $foreignDiscipline = $discipline->getId();
+        $this->client->loginUser($teacher);
+        $this->client->request('GET', '/schedule?from=2026-10-24&to=2026-10-24');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextNotContains('main', 'Чужа група');
+        self::assertSelectorTextNotContains('main', 'Стороння дисципліна');
+        self::assertSelectorExists('a[data-turbo-frame="schedule-modal"][href*="/schedule/'.$id.'/topic"]');
+        self::assertSelectorNotExists('a[href*="/schedule/cell/"]');
+        self::assertSelectorNotExists('a[href*="/schedule/pairs"]');
+        foreach (['group='.$foreignGroup, 'discipline='.$foreignDiscipline] as $filter) {
+            $this->client->request('GET', '/schedule?'.$filter);
+            self::assertResponseStatusCodeSame(403);
+        }
+        $this->client->loginUser($this->user('director-calendar@example.com', UserRole::Director));
+        $this->client->request('GET', '/schedule?from=2026-10-24&to=2026-10-24');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', 'Стороння дисципліна');
+        self::assertSelectorNotExists('a.schedule-cell');
+        self::assertSelectorNotExists('a[href*="/schedule/pairs"]');
+    }
+
+    public function testTopicModalSavesAndCanClearTopic(): void
+    {
+        $this->createLesson();
+        $lesson = $this->manager()->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId]);
+        $id = $lesson->getId();
+        $topic = (new LessonTopic())->setName('Тема в модальному вікні')->setDiscipline($lesson->getDiscipline());
+        $this->manager()->persist($topic);
+        $this->manager()->flush();
+        $topicId = $topic->getId();
+        $this->client->loginUser($this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']));
+        $this->client->setServerParameter('HTTP_TURBO_FRAME', 'schedule-modal');
+        $this->client->request('GET', '/schedule/'.$id.'/topic?from=2026-10-24&to=2026-10-24&view=schedule');
+        self::assertSelectorExists('turbo-frame#schedule-modal dialog[aria-labelledby="topic-title"]');
+        self::assertSelectorExists('form[data-turbo-frame="schedule-modal"]');
+        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => $topicId]);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('turbo-stream[action="refresh"]');
+        $this->client->request('GET', '/schedule/'.$id.'/topic');
+        self::assertSelectorExists('option[value="'.$topicId.'"][selected]');
+        $this->client->submitForm('Зберегти тему', ['schedule_topic[topic]' => '']);
+        self::assertResponseIsSuccessful();
+        $this->manager()->clear();
+        self::assertNull($this->manager()->find(Schedule::class, $id)->getTopic());
+    }
+
+    public function testStaleTopicFormCannotAssignAfterDisciplineChanges(): void
+    {
+        $this->createLesson();
+        $manager = $this->manager();
+        $lesson = $manager->getRepository(Schedule::class)->findOneBy(['group' => $this->groupId]);
+        $topic = (new LessonTopic())->setName('Попередня дисципліна')->setDiscipline($lesson->getDiscipline());
+        $manager->persist($topic);
+        $manager->flush();
+        $teacher = $manager->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']);
+        $manager->getConnection()->executeStatement('UPDATE schedule SET discipline_id = ? WHERE id = ?', [$this->otherDisciplineId, $lesson->getId()]);
+        self::assertFalse(static::getContainer()->get(ScheduleManager::class)->assignTopic($lesson, $topic, $teacher));
+        self::assertNull($manager->getConnection()->fetchOne('SELECT topic_id FROM schedule WHERE id = ?', [$lesson->getId()]));
     }
 
     public function testHeadCanCreateEditAndDeleteThroughTableModal(): void
@@ -263,6 +421,46 @@ class ScheduleTest extends WebTestCase
         self::assertSelectorTextContains('tbody', '09:30–11:30');
         $this->client->request('GET', '/account?from=2026-10-26&to=2026-10-26');
         self::assertSelectorTextContains('thead', '08:00–10:00');
+    }
+
+    public function testPairModalCanBeOpenedFromCalendarAndSaved(): void
+    {
+        $query = '?from=2026-10-19&to=2026-10-25&group='.$this->groupId;
+        $this->client->request('GET', '/schedule'.$query);
+        self::assertSelectorExists('thead a[data-turbo-frame="schedule-modal"][aria-label="Редагувати пару 1"]');
+        $url = $this->client->getCrawler()->filter('thead a[aria-label="Редагувати пару 1"]')->first()->attr('href');
+        $this->client->setServerParameter('HTTP_TURBO_FRAME', 'schedule-modal');
+        $this->client->request('GET', $url);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('turbo-frame#schedule-modal dialog[aria-labelledby="pair-title"]');
+        self::assertSelectorExists('form[data-turbo-frame="schedule-modal"]');
+        self::assertSelectorExists('a[aria-label="Закрити"][href="/schedule?from=2026-10-19&to=2026-10-25&cursor=2026-10-19&group='.$this->groupId.'&view=schedule"]');
+        $this->client->submitForm('Зберегти пару', ['pair[weekdayStart]' => '08:00', 'pair[weekdayEnd]' => '10:00']);
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/vnd.turbo-stream.html; charset=UTF-8');
+        self::assertSelectorExists('turbo-stream[action="update"][target="schedule-modal"]');
+        self::assertSelectorExists('turbo-stream[action="refresh"]');
+        $this->client->setServerParameter('HTTP_TURBO_FRAME', '');
+        $this->client->request('GET', '/schedule'.$query);
+        self::assertSelectorTextContains('thead', '08:00–10:00');
+    }
+
+    public function testPairModalKeepsValidationErrorsAndSupportsCreation(): void
+    {
+        $this->client->request('GET', '/schedule/pairs');
+        self::assertSelectorExists('turbo-frame#schedule-modal');
+        self::assertSelectorExists('a[data-turbo-frame="schedule-modal"][href="/schedule/pairs/'.$this->pairId.'/edit"]');
+        $this->client->setServerParameter('HTTP_TURBO_FRAME', 'schedule-modal');
+        $this->client->request('GET', '/schedule/pairs/new');
+        $this->client->submitForm('Зберегти пару', ['pair[number]' => 2, 'pair[weekdayStart]' => '09:00', 'pair[weekdayEnd]' => '11:00']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorExists('turbo-frame#schedule-modal dialog');
+        self::assertSelectorTextContains('[role="alert"]', 'Час перетинається');
+        self::assertSame(1, $this->manager()->getRepository(Pair::class)->count([]));
+        $this->client->submitForm('Зберегти пару', ['pair[weekdayStart]' => '11:00', 'pair[weekdayEnd]' => '13:00', 'pair[weekendStart]' => '11:00', 'pair[weekendEnd]' => '13:00']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('turbo-stream[action="refresh"]');
+        self::assertSame(2, $this->manager()->getRepository(Pair::class)->count([]));
     }
 
     public function testOverlappingPairAndEndBeforeStartAreRejected(): void
