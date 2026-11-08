@@ -75,16 +75,24 @@
         "symfony/polyfill-php82": "*"
     },
     "scripts": {
+        "build:css": [
+            "npm ci --include=dev --no-audit --no-fund",
+            "npm run build:css"
+        ],
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd",
             "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
-            "@auto-scripts"
+            "@build:css",
+            "@auto-scripts",
+            "@php bin/compile-production-assets.php"
         ],
         "post-update-cmd": [
-            "@auto-scripts"
+            "@build:css",
+            "@auto-scripts",
+            "@php bin/compile-production-assets.php"
         ]
     },
     "conflict": {

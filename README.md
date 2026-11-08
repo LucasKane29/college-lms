@@ -55,6 +55,12 @@ docker compose up -d --wait --wait-timeout 240
 docker compose exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
 ```
 
+`composer install` автоматично встановлює Node-залежності та збирає Tailwind CSS.
+Node.js 22 і npm входять до PHP-образу; після зміни `docker/php/Dockerfile`
+образ потрібно перебудувати. Помилка збірки CSS зупиняє встановлення залежностей.
+У `APP_ENV=prod` після команд Symfony автоматично запускається
+`asset-map:compile`, щоб опублікувати актуальні стилі. Деталі: [збірка інтерфейсу](app/frontend/README.md).
+
 `app` перевіряє готовність FPM і може запускатися до встановлення Composer-залежностей. Worker відокремлений профілем, щоб не стартувати до встановлення залежностей та міграцій. Перший `up` не означає, що Symfony вже готовий приймати користувачів.
 
 Переконайтеся, що проєкт містить `symfony/amqp-messenger`, `symfony/doctrine-messenger`, Doctrine ORM/DBAL, Doctrine Migrations та Symfony Mailer. Якщо їх немає, додайте залежності в гілці розробки, перевірте результат і збережіть `composer.json` / `composer.lock` у Git. Наприклад, для Messenger:
