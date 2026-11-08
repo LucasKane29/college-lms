@@ -6,7 +6,9 @@ use App\Entity\Discipline;
 use App\Form\DisciplineType;
 use App\Repository\DisciplineRepository;
 use App\Repository\GroupRepository;
+use App\Repository\UserRepository;
 use App\Security\DisciplineVoter;
+use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -71,6 +73,19 @@ class TeacherDisciplineController extends AbstractController
         return $this->render('discipline/groups.html.twig', $groups->findForTeacherPage(
             $this->getUser(), $this->isGranted('ROLE_ADMIN'), $request->query->getInt('page', 1),
         ));
+    }
+
+    #[Route('/groups/{id}', name: 'app_teacher_group_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
+    public function students(int $id, Request $request, GroupRepository $groups, UserRepository $users): Response
+    {
+        $group = $groups->find($id) ?? throw $this->createNotFoundException();
+        if (!$this->isGranted('ROLE_ADMIN') && !$groups->isTaughtBy($group, $this->getUser())) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $this->render('discipline/students.html.twig', $users->findFilteredPage(
+            ['studentGroup' => $group, 'role' => UserRole::Student], $request->query->getInt('page', 1), 20,
+        ) + ['group' => $group]);
     }
 
     private function managedDiscipline(int $id, DisciplineRepository $disciplines): Discipline

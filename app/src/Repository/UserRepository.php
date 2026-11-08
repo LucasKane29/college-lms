@@ -120,6 +120,14 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->setParameter('studentRole', '%"ROLE!_STUDENT"%')->getQuery()->execute();
     }
 
+    public function recordActivity(User $user, \DateTimeImmutable $at): void
+    {
+        $this->createQueryBuilder('u')->update()->set('u.lastActivityAt', ':at')
+            ->where('u.id = :id')->andWhere('u.lastActivityAt IS NULL OR u.lastActivityAt < :at')
+            ->setParameter('id', $user->getId())->setParameter('at', $at, Types::DATETIME_IMMUTABLE)
+            ->getQuery()->execute();
+    }
+
     public function assignStudentToGroup(User $student, Group $group): bool
     {
         // The conditional update prevents two concurrent requests from moving a student between groups.

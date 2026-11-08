@@ -7,7 +7,7 @@
         <table class="admin-table">
             <thead><tr><th scope="col">Група</th><th scope="col">Куратор</th></tr></thead>
             <tbody>
-                {% for group in groups %}<tr data-group-id="{{ group.id }}"><td>{{ group.name }}</td><td>{{ group.curator.fullName }}</td></tr>
+                {% for group in groups %}<tr data-group-id="{{ group.id }}"><td><a href="{{ path('app_teacher_group_show', {id: group.id}) }}">{{ group.name }}</a></td><td>{{ group.curator.fullName }}</td></tr>
                 {% else %}<tr><td colspan="2" class="admin-empty">За вашими дисциплінами ще не закріплено груп.</td></tr>{% endfor %}
             </tbody>
         </table>

@@ -72,7 +72,7 @@ class DisciplineTest extends WebTestCase
     public function testOtherRolesCannotManageDisciplines(UserRole $role): void
     {
         $this->client->loginUser($this->user('actor@example.com', $role));
-        foreach (['/teacher/disciplines', '/teacher/disciplines/new', '/teacher/disciplines/1', '/teacher/disciplines/1/edit', '/teacher/groups'] as $url) {
+        foreach (['/teacher/disciplines', '/teacher/disciplines/new', '/teacher/disciplines/1', '/teacher/disciplines/1/edit', '/teacher/groups', '/teacher/groups/1'] as $url) {
             $this->client->request('GET', $url);
             self::assertResponseStatusCodeSame(403);
         }
@@ -84,6 +84,84 @@ class DisciplineTest extends WebTestCase
     {
         $this->client->request('GET', '/teacher/disciplines/new');
         self::assertResponseRedirects('/login');
+    }
+
+    public function testTeacherCanFollowGroupLinkAndSeeStudentDetails(): void
+    {
+        $teacher = $this->user('teacher@example.com', UserRole::Teacher);
+        $group = $this->group($this->user('curator@example.com', UserRole::Curator), 'КН-21');
+        $this->discipline($teacher, 'Математика', [$group]);
+        $student = $this->user('student@example.com', UserRole::Student)
+            ->setFullName('Олена Тестова')->setPhoneNumber('+380671234567')
+            ->setBirthDate(new \DateTimeImmutable('2006-05-12'))->setStudentGroup($group);
+        $this->manager()->flush();
+        $id = $student->getId();
+        $createdAt = $student->getCreatedAt()->setTimezone(new \DateTimeZone('Europe/Kyiv'))->format('d.m.Y H:i:s');
+        $this->client->loginUser($teacher);
+        $this->client->request('GET', '/teacher/groups');
+        $this->client->clickLink('КН-21');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(1, 'tr[data-student-id]');
+        foreach (['Олена Тестова', 'student@example.com', '+380671234567', '12.05.2006', 'Студент', 'КН-21', $createdAt, 'Ще не зафіксовано'] as $value) {
+            self::assertSelectorTextContains('tr[data-student-id="'.$id.'"]', $value);
+        }
+        self::assertStringNotContainsString('fixture-hash', $this->client->getResponse()->getContent());
+
+        $this->client->loginUser($this->manager()->find(User::class, $id));
+        $before = new \DateTimeImmutable('-1 second');
+        $this->client->request('GET', '/account');
+        self::assertResponseIsSuccessful();
+        $this->manager()->clear();
+        $lastActivity = $this->manager()->find(User::class, $id)->getLastActivityAt();
+        self::assertNotNull($lastActivity);
+        self::assertGreaterThanOrEqual($before, $lastActivity);
+        self::assertLessThanOrEqual(new \DateTimeImmutable(), $lastActivity);
+
+        $this->client->loginUser($this->manager()->getRepository(User::class)->findOneBy(['email' => 'teacher@example.com']));
+        $this->client->request('GET', '/teacher/groups/'.$group->getId());
+        self::assertSelectorTextContains('tr[data-student-id="'.$id.'"]', $lastActivity->setTimezone(new \DateTimeZone('Europe/Kyiv'))->format('d.m.Y H:i:s'));
+    }
+
+    public function testTeacherCannotReadUnassignedGroupAndAdminCan(): void
+    {
+        $teacher = $this->user('teacher@example.com', UserRole::Teacher);
+        $group = $this->group($this->user('curator@example.com', UserRole::Curator), 'Чужа група');
+        $this->discipline($this->user('other@example.com', UserRole::Teacher), 'Інша дисципліна', [$group]);
+        $url = '/teacher/groups/'.$group->getId();
+        $this->client->request('GET', $url);
+        self::assertResponseRedirects('/login');
+        $this->client->loginUser($teacher);
+        $this->client->request('GET', $url);
+        self::assertResponseStatusCodeSame(403);
+        $this->client->request('GET', '/teacher/groups/999999');
+        self::assertResponseStatusCodeSame(404);
+        $this->client->loginUser($this->user('admin@example.com', UserRole::Admin));
+        $this->client->request('GET', $url);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.admin-empty', 'У групі ще немає студентів.');
+    }
+
+    public function testStudentListIsPaginatedAndRestrictedToSelectedGroup(): void
+    {
+        $teacher = $this->user('teacher@example.com', UserRole::Teacher);
+        $curator = $this->user('curator@example.com', UserRole::Curator);
+        $group = $this->group($curator, 'КН-21');
+        $otherGroup = $this->group($curator, 'КН-22');
+        $this->discipline($teacher, 'Математика', [$group, $otherGroup]);
+        for ($i = 1; $i <= 21; ++$i) {
+            $this->user('student'.$i.'@example.com', UserRole::Student)->setStudentGroup($group);
+        }
+        $this->user('outsider@example.com', UserRole::Student)->setStudentGroup($otherGroup);
+        $this->manager()->flush();
+        $this->client->loginUser($teacher);
+        $this->client->request('GET', '/teacher/groups/'.$group->getId());
+        self::assertSelectorCount(20, 'tr[data-student-id]');
+        self::assertSelectorTextNotContains('tbody', 'outsider@example.com');
+        $this->client->clickLink('Наступна →');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(1, 'tr[data-student-id]');
+        self::assertSelectorTextContains('tbody', 'student21@example.com');
+        self::assertSelectorTextContains('tbody', 'Не вказано');
     }
 
     public function testTeacherCanCreateDisciplineForMultipleGroups(): void

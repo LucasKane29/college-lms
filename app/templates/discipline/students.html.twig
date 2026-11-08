@@ -1,0 +1,30 @@
+{% extends 'admin/layout.html.twig' %}
+{% block title %}Студенти {{ group.name }} · College LMS{% endblock %}
+{% block admin_content %}
+    <a href="{{ path('app_teacher_groups') }}">← Групи</a>
+    <h1>Студенти групи {{ group.name }}</h1>
+    <p class="admin-description">Куратор: {{ group.curator.fullName }} · Студентів: {{ total }}</p>
+    <p class="admin-description">Час указано за Києвом. Остання активність — останній успішний запит авторизованого користувача.</p>
+    <div class="admin-table-scroll" role="region" aria-label="Студенти групи" tabindex="0">
+        <table class="admin-table">
+            <thead><tr>
+                <th scope="col">ID</th><th scope="col">Ім’я та прізвище</th><th scope="col">Email</th>
+                <th scope="col">Телефон</th><th scope="col">Дата народження</th><th scope="col">Роль</th>
+                <th scope="col">Група</th><th scope="col">Створено</th><th scope="col">Остання активність</th>
+            </tr></thead>
+            <tbody>
+                {% for student in users %}
+                    <tr data-student-id="{{ student.id }}">
+                        <td>{{ student.id }}</td><td>{{ student.fullName }}</td><td>{{ student.email }}</td>
+                        <td>{{ student.phoneNumber ?? 'Не вказано' }}</td>
+                        <td>{{ student.birthDate ? student.birthDate|date('d.m.Y') : 'Не вказано' }}</td>
+                        <td>{{ student.role.label }}</td><td>{{ group.name }}</td>
+                        <td><time datetime="{{ student.createdAt|date('c') }}">{{ student.createdAt|date('d.m.Y H:i:s', 'Europe/Kyiv') }}</time></td>
+                        <td>{% if student.lastActivityAt %}<time datetime="{{ student.lastActivityAt|date('c') }}">{{ student.lastActivityAt|date('d.m.Y H:i:s', 'Europe/Kyiv') }}</time>{% else %}Ще не зафіксовано{% endif %}</td>
+                    </tr>
+                {% else %}<tr><td colspan="9" class="admin-empty">У групі ще немає студентів.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'curator/_pagination.html.twig' with {route: 'app_teacher_group_show', query: {id: group.id}} %}
+{% endblock %}

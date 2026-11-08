@@ -26,6 +26,15 @@ class GroupRepository extends ServiceEntityRepository
         return $query;
     }
 
+    public function isTaughtBy(Group $group, User $teacher): bool
+    {
+        return 0 < (int) $this->createQueryBuilder('g')->select('COUNT(g.id)')
+            ->innerJoin('g.disciplines', 'discipline')
+            ->where('g.id = :id')->andWhere('discipline.teacher = :teacher')
+            ->setParameter('id', $group->getId())->setParameter('teacher', $teacher)
+            ->getQuery()->getSingleScalarResult();
+    }
+
     /** @return array{groups: list<Group>, total: int, page: int, pages: int} */
     public function findForTeacherPage(User $teacher, bool $admin, int $page): array
     {
